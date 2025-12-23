@@ -34,6 +34,7 @@ export const sampleReceipts: Receipt[] = [
     id: "rec-1",
     merchantId: "mer-1",
     date: "2024-12-22",
+    hasCustomerNif: false,
     items: [
       { id: "item-1", productId: "prod-1", quantity: 2, unitPrice: 5.99, total: 11.98 },
       { id: "item-2", productId: "prod-2", quantity: 1, unitPrice: 4.49, total: 4.49 },
@@ -46,6 +47,7 @@ export const sampleReceipts: Receipt[] = [
     id: "rec-2",
     merchantId: "mer-3",
     date: "2024-12-21",
+    hasCustomerNif: false,
     items: [
       { id: "item-4", productId: "prod-4", quantity: 2, unitPrice: 12.50, total: 25.00 },
     ],
@@ -55,6 +57,7 @@ export const sampleReceipts: Receipt[] = [
     id: "rec-3",
     merchantId: "mer-4",
     date: "2024-12-20",
+    hasCustomerNif: false,
     items: [
       { id: "item-5", productId: "prod-5", quantity: 15, unitPrice: 3.89, total: 58.35 },
     ],
@@ -65,6 +68,7 @@ export const sampleReceipts: Receipt[] = [
     id: "rec-4",
     merchantId: "mer-2",
     date: "2024-12-19",
+    hasCustomerNif: false,
     items: [
       { id: "item-6", productId: "prod-7", quantity: 4, unitPrice: 1.99, total: 7.96 },
       { id: "item-7", productId: "prod-8", quantity: 1, unitPrice: 12.99, total: 12.99 },
@@ -75,6 +79,7 @@ export const sampleReceipts: Receipt[] = [
     id: "rec-5",
     merchantId: "mer-6",
     date: "2024-12-18",
+    hasCustomerNif: false,
     items: [
       { id: "item-8", productId: "prod-6", quantity: 1, unitPrice: 8.99, total: 8.99 },
     ],
