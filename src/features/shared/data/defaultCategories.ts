@@ -16,7 +16,27 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: "cat-other", name: "Other", icon: "📦", color: "hsl(0, 0%, 50%)", isDefault: true },
 ];
 
-export const DEFAULT_SUBCATEGORIES: Subcategory[] = [];
+export const DEFAULT_SUBCATEGORIES: Subcategory[] = [
+  // Groceries
+  { id: "subcat-dairy", name: "Dairy", parentCategoryId: "cat-groceries" },
+  { id: "subcat-bakery", name: "Bakery", parentCategoryId: "cat-groceries" },
+  { id: "subcat-meat", name: "Meat & Fish", parentCategoryId: "cat-groceries" },
+  { id: "subcat-produce", name: "Fruits & Vegetables", parentCategoryId: "cat-groceries" },
+  { id: "subcat-frozen", name: "Frozen", parentCategoryId: "cat-groceries" },
+  { id: "subcat-beverages", name: "Beverages", parentCategoryId: "cat-groceries" },
+  // Dining
+  { id: "subcat-fastfood", name: "Fast Food", parentCategoryId: "cat-dining" },
+  { id: "subcat-restaurants", name: "Restaurants", parentCategoryId: "cat-dining" },
+  { id: "subcat-cafes", name: "Cafés", parentCategoryId: "cat-dining" },
+  // Transport
+  { id: "subcat-fuel", name: "Fuel", parentCategoryId: "cat-transport" },
+  { id: "subcat-publictransport", name: "Public Transport", parentCategoryId: "cat-transport" },
+  { id: "subcat-parking", name: "Parking", parentCategoryId: "cat-transport" },
+  // Shopping
+  { id: "subcat-clothing", name: "Clothing", parentCategoryId: "cat-shopping" },
+  { id: "subcat-electronics", name: "Electronics", parentCategoryId: "cat-shopping" },
+  { id: "subcat-home", name: "Home & Garden", parentCategoryId: "cat-shopping" },
+];
 
 // Sample data for demo purposes
 export const SAMPLE_MERCHANTS = [

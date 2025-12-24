@@ -28,7 +28,7 @@ const SORT_OPTIONS: SortOption[] = [
 export default function ProductsPage() {
   const { products, updateProduct, deleteProduct, addProduct } = useProducts();
   const { categories } = useCategories();
-  const { subcategories } = useSubcategories();
+  const { subcategories, addSubcategory } = useSubcategories();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -227,6 +227,7 @@ export default function ProductsPage() {
         categories={categories}
         subcategories={subcategories}
         onSave={handleSave}
+        onAddSubcategory={addSubcategory}
       />
       <DeleteConfirmDialog
         open={deleteDialogOpen}
