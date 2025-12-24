@@ -32,6 +32,7 @@ function PageLoader() {
 // ============================================================================
 
 // Main pages
+const DashboardPage = lazy(() => import("@/features/dashboard/pages/DashboardPage"));
 const ReceiptsPage = lazy(() => import("@/features/receipts/pages/ReceiptsPage"));
 const ReceiptDetail = lazy(() => import("@/features/receipts/pages/ReceiptDetail"));
 const MerchantsPage = lazy(() => import("@/features/merchants/pages/MerchantsPage"));
@@ -61,8 +62,11 @@ const App = () => (
         {/* Suspense shows loader while lazy components load */}
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            {/* Main receipts page (home) */}
-            <Route path="/" element={<ReceiptsPage />} />
+            {/* Dashboard (home) */}
+            <Route path="/" element={<DashboardPage />} />
+            
+            {/* Receipts */}
+            <Route path="/receipts" element={<ReceiptsPage />} />
             <Route path="/receipts/:id" element={<ReceiptDetail />} />
             
             {/* Data management pages */}
