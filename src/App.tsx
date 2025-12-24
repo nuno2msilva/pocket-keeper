@@ -11,6 +11,7 @@ import ProductsPage from "@/features/products/pages/ProductsPage";
 import CategoriesPage from "@/features/categories/pages/CategoriesPage";
 import CategoryDetailPage from "@/features/categories/pages/CategoryDetailPage";
 import InsightsPage from "@/features/insights/pages/InsightsPage";
+import { SettingsPage } from "@/features/settings";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/categories/:id" element={<CategoryDetailPage />} />
           <Route path="/insights" element={<InsightsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -30,6 +30,7 @@ export interface Product {
   defaultPrice?: number;
   excludeFromPriceHistory?: boolean;
   isSolidified?: boolean;
+  barcode?: string; // For barcode scanning
 }
 
 export interface ReceiptItem {

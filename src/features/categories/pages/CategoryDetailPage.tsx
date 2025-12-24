@@ -22,10 +22,7 @@ export default function CategoryDetailPage() {
   const category = categories.find((c) => c.id === id);
   const categorySubcategories = id ? getSubcategoriesByCategory(id) : [];
 
-  // Auto-cleanup empty subcategories on mount
-  useEffect(() => {
-    cleanupEmptySubcategories(products);
-  }, []);
+  // Note: subcategory cleanup is now handled automatically by useProducts
 
   const getProductCount = (subcategoryId: string) => products.filter((p) => p.subcategoryId === subcategoryId).length;
 
