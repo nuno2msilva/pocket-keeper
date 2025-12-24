@@ -6,101 +6,101 @@
 
 @layer base {
   :root {
-    --background: 210 25% 97%;
-    --foreground: 220 30% 12%;
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 12%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 12%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 220 70% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 215 20% 93%;
-    --secondary-foreground: 220 25% 25%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 20%;
 
-    --muted: 215 15% 90%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 210 40% 94%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 200 80% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 199 89% 48%;
+    --accent-foreground: 210 40% 98%;
 
-    --success: 152 55% 45%;
-    --success-foreground: 0 0% 100%;
+    --success: 142 71% 45%;
+    --success-foreground: 210 40% 98%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 26 83% 14%;
 
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 215 20% 88%;
-    --input: 215 20% 88%;
-    --ring: 220 70% 50%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
 
     --radius: 0.75rem;
 
-    --chart-1: 220 70% 50%;
-    --chart-2: 200 80% 45%;
-    --chart-3: 152 55% 45%;
+    --chart-1: 221 83% 53%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 142 71% 45%;
     --chart-4: 38 92% 50%;
-    --chart-5: 280 55% 55%;
+    --chart-5: 280 65% 60%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 30% 20%;
-    --sidebar-primary: 220 70% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 20% 96%;
-    --sidebar-accent-foreground: 220 30% 20%;
-    --sidebar-border: 215 20% 90%;
-    --sidebar-ring: 220 70% 50%;
+    --sidebar-foreground: 222 47% 20%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 20%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 221 83% 53%;
   }
 
   .dark {
-    --background: 222 30% 8%;
-    --foreground: 210 25% 95%;
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
 
-    --card: 222 25% 12%;
-    --card-foreground: 210 25% 95%;
+    --card: 224 71% 7%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 222 25% 12%;
-    --popover-foreground: 210 25% 95%;
+    --popover: 224 71% 7%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 220 75% 60%;
-    --primary-foreground: 222 30% 8%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
 
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 210 20% 85%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 90%;
 
-    --muted: 220 15% 20%;
-    --muted-foreground: 210 10% 60%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 200 80% 55%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 199 89% 55%;
+    --accent-foreground: 222 47% 11%;
 
-    --success: 152 55% 50%;
-    --success-foreground: 0 0% 100%;
+    --success: 142 71% 50%;
+    --success-foreground: 222 47% 11%;
 
     --warning: 38 92% 55%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 26 83% 14%;
 
-    --destructive: 0 65% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 20% 22%;
-    --input: 220 20% 22%;
-    --ring: 220 75% 60%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
 
-    --sidebar-background: 222 25% 10%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 220 75% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 16%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 220 20% 18%;
-    --sidebar-ring: 220 75% 60%;
+    --sidebar-background: 224 71% 5%;
+    --sidebar-foreground: 210 40% 95%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 95%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 217 91% 60%;
   }
 
   /* High Contrast Mode */
@@ -114,7 +114,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
 
-    --primary: 220 100% 40%;
+    --primary: 221 100% 40%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 90%;
@@ -123,10 +123,10 @@
     --muted: 0 0% 85%;
     --muted-foreground: 0 0% 25%;
 
-    --accent: 200 100% 35%;
+    --accent: 199 100% 35%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 140 100% 30%;
+    --success: 142 100% 30%;
     --success-foreground: 0 0% 100%;
 
     --warning: 45 100% 45%;
@@ -137,7 +137,7 @@
 
     --border: 0 0% 0%;
     --input: 0 0% 0%;
-    --ring: 220 100% 40%;
+    --ring: 221 100% 40%;
   }
 
   .high-contrast.dark {
@@ -150,7 +150,7 @@
     --popover: 0 0% 5%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 220 100% 65%;
+    --primary: 217 100% 65%;
     --primary-foreground: 0 0% 0%;
 
     --secondary: 0 0% 15%;
@@ -159,10 +159,10 @@
     --muted: 0 0% 20%;
     --muted-foreground: 0 0% 75%;
 
-    --accent: 200 100% 60%;
+    --accent: 199 100% 60%;
     --accent-foreground: 0 0% 0%;
 
-    --success: 140 100% 50%;
+    --success: 142 100% 50%;
     --success-foreground: 0 0% 0%;
 
     --warning: 45 100% 55%;
@@ -173,7 +173,7 @@
 
     --border: 0 0% 100%;
     --input: 0 0% 100%;
-    --ring: 220 100% 65%;
+    --ring: 217 100% 65%;
   }
 }
 
@@ -184,10 +184,17 @@
 
   html {
     font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
   }
 }
 
@@ -205,5 +212,12 @@
   
   .touch-target-lg {
     @apply min-h-[48px] min-w-[48px];
+  }
+}
+
+/* Safe area for mobile notches */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe-bottom {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
   }
 }
