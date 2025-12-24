@@ -799,15 +799,22 @@ export function ReceiptDialog({
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <Label className="text-[11px]">Qty</Label>
+                            <Label className="text-[11px]">
+                              {products.find(p => p.id === item.productId)?.isWeighted ? "Weight" : "Qty"}
+                            </Label>
                             <Input
                               type="number"
-                              min="1"
+                              min={products.find(p => p.id === item.productId)?.isWeighted ? "0.001" : "1"}
+                              step={products.find(p => p.id === item.productId)?.isWeighted ? "0.001" : "1"}
                               value={item.quantity}
-                              onChange={(e) =>
-                                updateItem(index, { quantity: parseInt(e.target.value) || 1 })
-                              }
-                              aria-label="Quantity"
+                              onChange={(e) => {
+                                const isWeighted = products.find(p => p.id === item.productId)?.isWeighted;
+                                const qty = isWeighted 
+                                  ? parseFloat(e.target.value) || 0.001
+                                  : parseInt(e.target.value) || 1;
+                                updateItem(index, { quantity: qty });
+                              }}
+                              aria-label={products.find(p => p.id === item.productId)?.isWeighted ? "Weight" : "Quantity"}
                             />
                           </div>
                           <div>

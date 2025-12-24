@@ -21,6 +21,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
   const [defaultPrice, setDefaultPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
+  const [isWeighted, setIsWeighted] = useState(false);
   const [excludeFromPriceHistory, setExcludeFromPriceHistory] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -32,12 +33,14 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
       setDefaultPrice(product.defaultPrice?.toString() || "");
       setCategoryId(product.categoryId || "");
       setSubcategoryId(product.subcategoryId || "");
+      setIsWeighted(product.isWeighted || false);
       setExcludeFromPriceHistory(product.excludeFromPriceHistory || false);
     } else {
       setName("");
       setDefaultPrice("");
       setCategoryId("");
       setSubcategoryId("");
+      setIsWeighted(false);
       setExcludeFromPriceHistory(false);
     }
     setErrors({});
@@ -56,7 +59,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
 
   const handleSave = () => {
     if (!validate()) return;
-    onSave({ name: name.trim(), defaultPrice: defaultPrice ? parseFloat(defaultPrice) : undefined, categoryId: categoryId || undefined, subcategoryId: subcategoryId || undefined, excludeFromPriceHistory, isSolidified: true });
+    onSave({ name: name.trim(), defaultPrice: defaultPrice ? parseFloat(defaultPrice) : undefined, categoryId: categoryId || undefined, subcategoryId: subcategoryId || undefined, isWeighted, excludeFromPriceHistory, isSolidified: true });
     onOpenChange(false);
   };
 
@@ -84,6 +87,10 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
               <Select value={subcategoryId} onValueChange={setSubcategoryId}><SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger><SelectContent>{filteredSubcategories.map((sub) => (<SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>))}</SelectContent></Select>
             </div>
           )}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5"><Label>Sold by Weight</Label><p className="text-caption text-muted-foreground">For products like meat, fruit, etc.</p></div>
+            <Switch checked={isWeighted} onCheckedChange={setIsWeighted} />
+          </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5"><Label>Exclude from Price History</Label><p className="text-caption text-muted-foreground">For promo items</p></div>
             <Switch checked={excludeFromPriceHistory} onCheckedChange={setExcludeFromPriceHistory} />

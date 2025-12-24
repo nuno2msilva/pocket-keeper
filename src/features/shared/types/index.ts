@@ -67,6 +67,8 @@ export interface Product {
   subcategoryId?: string;
   /** Typical price for quick entry (optional) */
   defaultPrice?: number;
+  /** If true, this is a weighted product (sold by weight, not unit) */
+  isWeighted?: boolean;
   /** If true, don't track price changes for this product */
   excludeFromPriceHistory?: boolean;
   /** If true, this product has been confirmed (not just auto-created) */
