@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Product, Category, Subcategory } from "@/features/shared";
+import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ProductDialogProps {
   open: boolean;
@@ -14,18 +16,32 @@ interface ProductDialogProps {
   categories: Category[];
   subcategories: Subcategory[];
   onSave: (product: Omit<Product, "id">) => void;
+  onAddSubcategory?: (subcategory: Omit<Subcategory, "id">) => Subcategory;
 }
 
-export function ProductDialog({ open, onOpenChange, product, categories, subcategories, onSave }: ProductDialogProps) {
+export function ProductDialog({ open, onOpenChange, product, categories, subcategories, onSave, onAddSubcategory }: ProductDialogProps) {
   const [name, setName] = useState("");
   const [defaultPrice, setDefaultPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
+  const [subcategoryInput, setSubcategoryInput] = useState("");
+  const [showSubcategorySuggestions, setShowSubcategorySuggestions] = useState(false);
   const [isWeighted, setIsWeighted] = useState(false);
   const [excludeFromPriceHistory, setExcludeFromPriceHistory] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const subcategoryInputRef = useRef<HTMLInputElement>(null);
 
   const filteredSubcategories = categoryId ? subcategories.filter((s) => s.parentCategoryId === categoryId) : [];
+  
+  // Filter suggestions based on input
+  const subcategorySuggestions = subcategoryInput.trim()
+    ? filteredSubcategories.filter((s) => s.name.toLowerCase().includes(subcategoryInput.toLowerCase()))
+    : filteredSubcategories;
+
+  // Check if input matches an existing subcategory exactly
+  const exactMatch = filteredSubcategories.find(
+    (s) => s.name.toLowerCase() === subcategoryInput.trim().toLowerCase()
+  );
 
   useEffect(() => {
     if (product) {
@@ -33,6 +49,8 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
       setDefaultPrice(product.defaultPrice?.toString() || "");
       setCategoryId(product.categoryId || "");
       setSubcategoryId(product.subcategoryId || "");
+      const existingSub = subcategories.find((s) => s.id === product.subcategoryId);
+      setSubcategoryInput(existingSub?.name || "");
       setIsWeighted(product.isWeighted || false);
       setExcludeFromPriceHistory(product.excludeFromPriceHistory || false);
     } else {
@@ -40,15 +58,36 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
       setDefaultPrice("");
       setCategoryId("");
       setSubcategoryId("");
+      setSubcategoryInput("");
       setIsWeighted(false);
       setExcludeFromPriceHistory(false);
     }
     setErrors({});
-  }, [product, open]);
+  }, [product, open, subcategories]);
 
   useEffect(() => {
-    if (!filteredSubcategories.find((s) => s.id === subcategoryId)) setSubcategoryId("");
+    // Reset subcategory when category changes
+    if (!filteredSubcategories.find((s) => s.id === subcategoryId)) {
+      setSubcategoryId("");
+      setSubcategoryInput("");
+    }
   }, [categoryId]);
+
+  const handleSubcategorySelect = (sub: Subcategory) => {
+    setSubcategoryId(sub.id);
+    setSubcategoryInput(sub.name);
+    setShowSubcategorySuggestions(false);
+  };
+
+  const handleCreateSubcategory = () => {
+    if (!subcategoryInput.trim() || !categoryId || !onAddSubcategory) return;
+    const newSub = onAddSubcategory({
+      name: subcategoryInput.trim(),
+      parentCategoryId: categoryId,
+    });
+    setSubcategoryId(newSub.id);
+    setShowSubcategorySuggestions(false);
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -59,7 +98,26 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
 
   const handleSave = () => {
     if (!validate()) return;
-    onSave({ name: name.trim(), defaultPrice: defaultPrice ? parseFloat(defaultPrice) : undefined, categoryId: categoryId || undefined, subcategoryId: subcategoryId || undefined, isWeighted, excludeFromPriceHistory, isSolidified: true });
+    
+    // If there's a subcategory input but no ID, create it first
+    let finalSubcategoryId = subcategoryId;
+    if (subcategoryInput.trim() && !subcategoryId && categoryId && onAddSubcategory) {
+      const newSub = onAddSubcategory({
+        name: subcategoryInput.trim(),
+        parentCategoryId: categoryId,
+      });
+      finalSubcategoryId = newSub.id;
+    }
+    
+    onSave({ 
+      name: name.trim(), 
+      defaultPrice: defaultPrice ? parseFloat(defaultPrice) : undefined, 
+      categoryId: categoryId || undefined, 
+      subcategoryId: finalSubcategoryId || undefined, 
+      isWeighted, 
+      excludeFromPriceHistory, 
+      isSolidified: true 
+    });
     onOpenChange(false);
   };
 
@@ -79,14 +137,65 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
           </div>
           <div className="space-y-2">
             <Label>Category</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent>{categories.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.icon} {cat.name}</SelectItem>))}</SelectContent></Select>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.icon} {cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          {filteredSubcategories.length > 0 && (
+          
+          {/* Subcategory - only show when category is selected */}
+          {categoryId && (
             <div className="space-y-2">
               <Label>Subcategory</Label>
-              <Select value={subcategoryId} onValueChange={setSubcategoryId}><SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger><SelectContent>{filteredSubcategories.map((sub) => (<SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>))}</SelectContent></Select>
+              <div className="relative">
+                <Input
+                  ref={subcategoryInputRef}
+                  value={subcategoryInput}
+                  onChange={(e) => {
+                    setSubcategoryInput(e.target.value);
+                    setSubcategoryId(""); // Clear ID when typing
+                    setShowSubcategorySuggestions(true);
+                  }}
+                  onFocus={() => setShowSubcategorySuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSubcategorySuggestions(false), 150)}
+                  placeholder="Type or select subcategory..."
+                />
+                {showSubcategorySuggestions && (subcategorySuggestions.length > 0 || (subcategoryInput.trim() && !exactMatch)) && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden max-h-48 overflow-y-auto">
+                    {subcategorySuggestions.map((sub) => (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        className={cn(
+                          "w-full px-3 py-2 text-left text-sm hover:bg-secondary transition-colors",
+                          subcategoryId === sub.id && "bg-secondary"
+                        )}
+                        onMouseDown={() => handleSubcategorySelect(sub)}
+                      >
+                        {sub.name}
+                      </button>
+                    ))}
+                    {subcategoryInput.trim() && !exactMatch && onAddSubcategory && (
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-secondary transition-colors border-t border-border flex items-center gap-2 text-primary"
+                        onMouseDown={handleCreateSubcategory}
+                      >
+                        <Plus className="w-4 h-4" />
+                        Create "{subcategoryInput.trim()}"
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              <p className="text-caption text-muted-foreground">Type to search or create new</p>
             </div>
           )}
+
           <div className="flex items-center justify-between">
             <Label>Pricing Type</Label>
             <div className="flex items-center gap-2 text-sm">

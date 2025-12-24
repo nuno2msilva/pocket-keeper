@@ -5,9 +5,9 @@
  * Only loads if no existing data is found.
  */
 
-import type { Merchant, Product, Receipt, Category } from "../types";
+import type { Merchant, Product, Receipt, Category, Subcategory } from "../types";
 import { setStoredData, getStoredData } from "./repository";
-import { DEFAULT_CATEGORIES } from "./defaultCategories";
+import { DEFAULT_CATEGORIES, DEFAULT_SUBCATEGORIES } from "./defaultCategories";
 
 const DEMO_MERCHANTS: Merchant[] = [
   { id: "merchant-demo-1", name: "Continente", nif: "500100144", address: "Av. da Liberdade 123, Lisboa", isSolidified: true },
@@ -19,21 +19,23 @@ const DEMO_MERCHANTS: Merchant[] = [
 ];
 
 const DEMO_PRODUCTS: Product[] = [
-  { id: "product-demo-1", name: "Milk 1L", categoryId: "cat-groceries", defaultPrice: 0.89, isSolidified: true },
-  { id: "product-demo-2", name: "Bread", categoryId: "cat-groceries", defaultPrice: 1.29, isSolidified: true },
-  { id: "product-demo-3", name: "Eggs (12)", categoryId: "cat-groceries", defaultPrice: 2.49, isSolidified: true },
-  { id: "product-demo-4", name: "Chicken Breast 500g", categoryId: "cat-groceries", defaultPrice: 4.99, isSolidified: true },
+  { id: "product-demo-1", name: "Milk 1L", categoryId: "cat-groceries", subcategoryId: "subcat-dairy", defaultPrice: 0.89, isSolidified: true },
+  { id: "product-demo-2", name: "Bread", categoryId: "cat-groceries", subcategoryId: "subcat-bakery", defaultPrice: 1.29, isSolidified: true },
+  { id: "product-demo-3", name: "Eggs (12)", categoryId: "cat-groceries", subcategoryId: "subcat-dairy", defaultPrice: 2.49, isSolidified: true },
+  { id: "product-demo-4", name: "Chicken Breast", categoryId: "cat-groceries", subcategoryId: "subcat-meat", defaultPrice: 9.99, isWeighted: true, isSolidified: true },
   { id: "product-demo-5", name: "Rice 1kg", categoryId: "cat-groceries", defaultPrice: 1.59, isSolidified: true },
-  { id: "product-demo-6", name: "Olive Oil 750ml", categoryId: "cat-groceries", defaultPrice: 5.99, isSolidified: true },
-  { id: "product-demo-7", name: "Coffee 250g", categoryId: "cat-groceries", defaultPrice: 3.49, isSolidified: true },
-  { id: "product-demo-8", name: "Butter 250g", categoryId: "cat-groceries", defaultPrice: 2.19, isSolidified: true },
-  { id: "product-demo-9", name: "Gasoline 95", categoryId: "cat-transport", defaultPrice: 1.75, isSolidified: true, excludeFromPriceHistory: true },
-  { id: "product-demo-10", name: "Metro Ticket", categoryId: "cat-transport", defaultPrice: 1.65, isSolidified: true },
-  { id: "product-demo-11", name: "USB-C Cable", categoryId: "cat-shopping", defaultPrice: 12.99, isSolidified: true },
-  { id: "product-demo-12", name: "Wireless Mouse", categoryId: "cat-shopping", defaultPrice: 24.99, isSolidified: true },
-  { id: "product-demo-13", name: "T-Shirt", categoryId: "cat-shopping", defaultPrice: 15.99, isSolidified: true },
-  { id: "product-demo-14", name: "Jeans", categoryId: "cat-shopping", defaultPrice: 39.99, isSolidified: true },
+  { id: "product-demo-6", name: "Olive Oil 750ml", categoryId: "cat-groceries", subcategoryId: "subcat-beverages", defaultPrice: 5.99, isSolidified: true },
+  { id: "product-demo-7", name: "Coffee 250g", categoryId: "cat-groceries", subcategoryId: "subcat-beverages", defaultPrice: 3.49, isSolidified: true },
+  { id: "product-demo-8", name: "Butter 250g", categoryId: "cat-groceries", subcategoryId: "subcat-dairy", defaultPrice: 2.19, isSolidified: true },
+  { id: "product-demo-9", name: "Gasoline 95", categoryId: "cat-transport", subcategoryId: "subcat-fuel", defaultPrice: 1.75, isSolidified: true, excludeFromPriceHistory: true },
+  { id: "product-demo-10", name: "Metro Ticket", categoryId: "cat-transport", subcategoryId: "subcat-publictransport", defaultPrice: 1.65, isSolidified: true },
+  { id: "product-demo-11", name: "USB-C Cable", categoryId: "cat-shopping", subcategoryId: "subcat-electronics", defaultPrice: 12.99, isSolidified: true },
+  { id: "product-demo-12", name: "Wireless Mouse", categoryId: "cat-shopping", subcategoryId: "subcat-electronics", defaultPrice: 24.99, isSolidified: true },
+  { id: "product-demo-13", name: "T-Shirt", categoryId: "cat-shopping", subcategoryId: "subcat-clothing", defaultPrice: 15.99, isSolidified: true },
+  { id: "product-demo-14", name: "Jeans", categoryId: "cat-shopping", subcategoryId: "subcat-clothing", defaultPrice: 39.99, isSolidified: true },
   { id: "product-demo-15", name: "Movie Ticket", categoryId: "cat-entertainment", defaultPrice: 7.50, isSolidified: true },
+  { id: "product-demo-16", name: "Apples", categoryId: "cat-groceries", subcategoryId: "subcat-produce", defaultPrice: 2.49, isWeighted: true, isSolidified: true },
+  { id: "product-demo-17", name: "Salmon Fillet", categoryId: "cat-groceries", subcategoryId: "subcat-meat", defaultPrice: 18.99, isWeighted: true, isSolidified: true },
 ];
 
 // Generate dates for the last 3 months
@@ -203,6 +205,7 @@ export function loadDemoDataIfNeeded(): boolean {
 
   // Load demo data
   setStoredData("categories", DEFAULT_CATEGORIES);
+  setStoredData("subcategories", DEFAULT_SUBCATEGORIES);
   setStoredData("merchants", DEMO_MERCHANTS);
   setStoredData("products", DEMO_PRODUCTS);
   setStoredData("receipts", DEMO_RECEIPTS);
