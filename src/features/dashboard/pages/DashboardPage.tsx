@@ -309,16 +309,6 @@ export default function DashboardPage() {
                 )}
               </TabsContent>
             </Tabs>
-
-            {/* Quick Action */}
-            <Button 
-              className="w-full" 
-              size="lg"
-              onClick={() => navigate("/receipts?add=true")}
-            >
-              <Receipt className="w-5 h-5 mr-2" />
-              Add New Receipt
-            </Button>
           </>
         )}
       </div>

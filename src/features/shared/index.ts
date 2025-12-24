@@ -20,5 +20,4 @@ export { ListCard } from "./components/ListCard";
 export { ListToolbar } from "./components/ListToolbar";
 export { SwipeableItem } from "./components/SwipeableItem";
 export { GlobalSearch } from "./components/GlobalSearch";
-export { QuickAddFAB } from "./components/QuickAddFAB";
 export type { SortOption, FilterOption } from "./components/ListToolbar";
