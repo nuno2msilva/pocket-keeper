@@ -1,0 +1,17 @@
+import { BottomNav } from "./BottomNav";
+
+interface AppLayoutProps {
+  children: React.ReactNode;
+  hideNav?: boolean;
+}
+
+export function AppLayout({ children, hideNav }: AppLayoutProps) {
+  return (
+    <div className="min-h-screen bg-background">
+      <main className={hideNav ? "" : "pb-20"}>
+        {children}
+      </main>
+      {!hideNav && <BottomNav />}
+    </div>
+  );
+}
