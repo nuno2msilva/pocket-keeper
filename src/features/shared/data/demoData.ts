@@ -19,21 +19,21 @@ const DEMO_MERCHANTS: Merchant[] = [
 ];
 
 const DEMO_PRODUCTS: Product[] = [
-  { id: "product-demo-1", name: "Milk 1L", categoryId: "cat-1", defaultPrice: 0.89, isSolidified: true },
-  { id: "product-demo-2", name: "Bread", categoryId: "cat-1", defaultPrice: 1.29, isSolidified: true },
-  { id: "product-demo-3", name: "Eggs (12)", categoryId: "cat-1", defaultPrice: 2.49, isSolidified: true },
-  { id: "product-demo-4", name: "Chicken Breast 500g", categoryId: "cat-1", defaultPrice: 4.99, isSolidified: true },
-  { id: "product-demo-5", name: "Rice 1kg", categoryId: "cat-1", defaultPrice: 1.59, isSolidified: true },
-  { id: "product-demo-6", name: "Olive Oil 750ml", categoryId: "cat-1", defaultPrice: 5.99, isSolidified: true },
-  { id: "product-demo-7", name: "Coffee 250g", categoryId: "cat-1", defaultPrice: 3.49, isSolidified: true },
-  { id: "product-demo-8", name: "Butter 250g", categoryId: "cat-1", defaultPrice: 2.19, isSolidified: true },
-  { id: "product-demo-9", name: "Gasoline 95", categoryId: "cat-2", defaultPrice: 1.75, isSolidified: true, excludeFromPriceHistory: true },
-  { id: "product-demo-10", name: "Metro Ticket", categoryId: "cat-2", defaultPrice: 1.65, isSolidified: true },
-  { id: "product-demo-11", name: "USB-C Cable", categoryId: "cat-5", defaultPrice: 12.99, isSolidified: true },
-  { id: "product-demo-12", name: "Wireless Mouse", categoryId: "cat-5", defaultPrice: 24.99, isSolidified: true },
-  { id: "product-demo-13", name: "T-Shirt", categoryId: "cat-4", defaultPrice: 15.99, isSolidified: true },
-  { id: "product-demo-14", name: "Jeans", categoryId: "cat-4", defaultPrice: 39.99, isSolidified: true },
-  { id: "product-demo-15", name: "Movie Ticket", categoryId: "cat-3", defaultPrice: 7.50, isSolidified: true },
+  { id: "product-demo-1", name: "Milk 1L", categoryId: "cat-groceries", defaultPrice: 0.89, isSolidified: true },
+  { id: "product-demo-2", name: "Bread", categoryId: "cat-groceries", defaultPrice: 1.29, isSolidified: true },
+  { id: "product-demo-3", name: "Eggs (12)", categoryId: "cat-groceries", defaultPrice: 2.49, isSolidified: true },
+  { id: "product-demo-4", name: "Chicken Breast 500g", categoryId: "cat-groceries", defaultPrice: 4.99, isSolidified: true },
+  { id: "product-demo-5", name: "Rice 1kg", categoryId: "cat-groceries", defaultPrice: 1.59, isSolidified: true },
+  { id: "product-demo-6", name: "Olive Oil 750ml", categoryId: "cat-groceries", defaultPrice: 5.99, isSolidified: true },
+  { id: "product-demo-7", name: "Coffee 250g", categoryId: "cat-groceries", defaultPrice: 3.49, isSolidified: true },
+  { id: "product-demo-8", name: "Butter 250g", categoryId: "cat-groceries", defaultPrice: 2.19, isSolidified: true },
+  { id: "product-demo-9", name: "Gasoline 95", categoryId: "cat-transport", defaultPrice: 1.75, isSolidified: true, excludeFromPriceHistory: true },
+  { id: "product-demo-10", name: "Metro Ticket", categoryId: "cat-transport", defaultPrice: 1.65, isSolidified: true },
+  { id: "product-demo-11", name: "USB-C Cable", categoryId: "cat-shopping", defaultPrice: 12.99, isSolidified: true },
+  { id: "product-demo-12", name: "Wireless Mouse", categoryId: "cat-shopping", defaultPrice: 24.99, isSolidified: true },
+  { id: "product-demo-13", name: "T-Shirt", categoryId: "cat-shopping", defaultPrice: 15.99, isSolidified: true },
+  { id: "product-demo-14", name: "Jeans", categoryId: "cat-shopping", defaultPrice: 39.99, isSolidified: true },
+  { id: "product-demo-15", name: "Movie Ticket", categoryId: "cat-entertainment", defaultPrice: 7.50, isSolidified: true },
 ];
 
 // Generate dates for the last 3 months
