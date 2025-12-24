@@ -211,7 +211,7 @@ export default function ProductsPage() {
                 title={product.name}
                 badge={needsReview ? { label: "Review", variant: "warning" } : undefined}
                 subtitle={`${category?.name || "Uncategorized"}${subcategory ? ` › ${subcategory.name}` : ""}`}
-                value={product.defaultPrice ? `€${product.defaultPrice.toFixed(2)}` : undefined}
+                value={product.defaultPrice ? `€${product.defaultPrice.toFixed(2)}${product.isWeighted ? "/kg" : "/un"}` : undefined}
                 onEdit={() => handleEdit(product)}
                 onDelete={() => handleDelete(product)}
               />
