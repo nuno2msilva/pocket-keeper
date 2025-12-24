@@ -1,16 +1,20 @@
 import { useState, useRef } from "react";
-import { Download, Upload, RotateCcw, CheckCircle2, AlertCircle, Settings as SettingsIcon } from "lucide-react";
+import { Download, Upload, RotateCcw, CheckCircle2, AlertCircle, Eye, MousePointer2 } from "lucide-react";
 import { AppLayout, PageHeader } from "@/features/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { exportAllData, importData } from "@/features/shared/data/repository";
 import { toast } from "sonner";
 import { DeleteConfirmDialog } from "@/features/shared/components/DeleteConfirmDialog";
+import { useAccessibility } from "@/features/shared/hooks/useAccessibility";
 
 export default function SettingsPage() {
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle");
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { highContrast, largerTargets, toggleHighContrast, toggleLargerTargets } = useAccessibility();
 
   const handleExport = () => {
     try {
@@ -79,6 +83,45 @@ export default function SettingsPage() {
       />
 
       <div className="p-4 space-y-4">
+        {/* Accessibility Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              Accessibility
+            </CardTitle>
+            <CardDescription>
+              Adjust display settings for better visibility and usability
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="high-contrast" className="text-base">High Contrast</Label>
+                <p className="text-sm text-muted-foreground">Increase color contrast for better visibility</p>
+              </div>
+              <Switch
+                id="high-contrast"
+                checked={highContrast}
+                onCheckedChange={toggleHighContrast}
+                className="touch-target"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="larger-targets" className="text-base">Larger Touch Targets</Label>
+                <p className="text-sm text-muted-foreground">Increase button and control sizes</p>
+              </div>
+              <Switch
+                id="larger-targets"
+                checked={largerTargets}
+                onCheckedChange={toggleLargerTargets}
+                className="touch-target"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Export Card */}
         <Card>
           <CardHeader className="pb-3">
@@ -91,7 +134,7 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={handleExport} className="w-full">
+            <Button onClick={handleExport} className="w-full touch-target-lg">
               <Download className="w-4 h-4 mr-2" />
               Download Backup
             </Button>
@@ -117,7 +160,7 @@ export default function SettingsPage() {
               onChange={handleFileChange}
               className="hidden"
             />
-            <Button onClick={handleImportClick} variant="outline" className="w-full">
+            <Button onClick={handleImportClick} variant="outline" className="w-full touch-target-lg">
               <Upload className="w-4 h-4 mr-2" />
               Select Backup File
             </Button>
