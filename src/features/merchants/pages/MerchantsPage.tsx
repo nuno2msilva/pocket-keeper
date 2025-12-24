@@ -1,10 +1,34 @@
-import { useState } from "react";
-import { Plus, Store, Pencil, Trash2, AlertCircle } from "lucide-react";
-import { AppLayout, PageHeader, EmptyState, DeleteConfirmDialog, useMerchants, useReceipts, Merchant } from "@/features/shared";
+import { useState, useMemo } from "react";
+import { Plus, Store } from "lucide-react";
+import {
+  AppLayout,
+  PageHeader,
+  EmptyState,
+  DeleteConfirmDialog,
+  ListCard,
+  ListToolbar,
+  useMerchants,
+  useReceipts,
+  Merchant,
+  SortOption,
+  FilterOption,
+} from "@/features/shared";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { MerchantDialog } from "../components/MerchantDialog";
 import { toast } from "sonner";
+
+const SORT_OPTIONS: SortOption[] = [
+  { id: "name", label: "Name" },
+  { id: "spent", label: "Total Spent" },
+  { id: "receipts", label: "Receipt Count" },
+  { id: "review", label: "Needs Review" },
+];
+
+const FILTER_OPTIONS: FilterOption[] = [
+  { id: "needs-review", label: "Needs Review", group: "Status" },
+  { id: "has-nif", label: "Has NIF", group: "Details" },
+  { id: "no-nif", label: "Missing NIF", group: "Details" },
+];
 
 export default function MerchantsPage() {
   const { merchants, addMerchant, updateMerchant, deleteMerchant } = useMerchants();
@@ -14,11 +38,67 @@ export default function MerchantsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
 
+  // Filter & sort state
+  const [search, setSearch] = useState("");
+  const [currentSort, setCurrentSort] = useState("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
   const getReceiptCount = (merchantId: string) =>
     receipts.filter((r) => r.merchantId === merchantId).length;
 
   const getTotalSpent = (merchantId: string) =>
     receipts.filter((r) => r.merchantId === merchantId).reduce((sum, r) => sum + r.total, 0);
+
+  // Filter and sort merchants
+  const filteredMerchants = useMemo(() => {
+    let result = [...merchants];
+
+    // Search filter
+    if (search) {
+      const query = search.toLowerCase();
+      result = result.filter(
+        (m) =>
+          m.name.toLowerCase().includes(query) ||
+          m.nif?.includes(query) ||
+          m.address?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply filters
+    if (activeFilters.length > 0) {
+      result = result.filter((merchant) => {
+        return activeFilters.some((filter) => {
+          if (filter === "needs-review") return !merchant.isSolidified;
+          if (filter === "has-nif") return !!merchant.nif;
+          if (filter === "no-nif") return !merchant.nif;
+          return true;
+        });
+      });
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (currentSort) {
+        case "name":
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case "spent":
+          comparison = getTotalSpent(a.id) - getTotalSpent(b.id);
+          break;
+        case "receipts":
+          comparison = getReceiptCount(a.id) - getReceiptCount(b.id);
+          break;
+        case "review":
+          comparison = (a.isSolidified ? 1 : 0) - (b.isSolidified ? 1 : 0);
+          break;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return result;
+  }, [merchants, search, activeFilters, currentSort, sortDirection, receipts]);
 
   const handleAdd = () => {
     setSelectedMerchant(null);
@@ -53,12 +133,13 @@ export default function MerchantsPage() {
     }
   };
 
-  // Sort: unsolidified first, then by name
-  const sortedMerchants = [...merchants].sort((a, b) => {
-    if (!a.isSolidified && b.isSolidified) return -1;
-    if (a.isSolidified && !b.isSolidified) return 1;
-    return a.name.localeCompare(b.name);
-  });
+  const toggleFilter = (filterId: string) => {
+    setActiveFilters((prev) =>
+      prev.includes(filterId)
+        ? prev.filter((f) => f !== filterId)
+        : [...prev, filterId]
+    );
+  };
 
   return (
     <AppLayout>
@@ -72,6 +153,21 @@ export default function MerchantsPage() {
         }
       />
 
+      <ListToolbar
+        searchPlaceholder="Search stores..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        sortOptions={SORT_OPTIONS}
+        currentSort={currentSort}
+        onSortChange={setCurrentSort}
+        sortDirection={sortDirection}
+        onSortDirectionChange={() => setSortDirection((d) => (d === "asc" ? "desc" : "asc"))}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={toggleFilter}
+        onClearFilters={() => setActiveFilters([])}
+      />
+
       <div className="p-4 space-y-3">
         {merchants.length === 0 ? (
           <EmptyState
@@ -81,72 +177,42 @@ export default function MerchantsPage() {
             actionLabel="Add Store"
             onAction={handleAdd}
           />
+        ) : filteredMerchants.length === 0 ? (
+          <EmptyState
+            icon={<Store className="w-8 h-8 text-muted-foreground" />}
+            title="No matches"
+            description="Try adjusting your search or filters"
+          />
         ) : (
-          sortedMerchants.map((merchant) => {
+          filteredMerchants.map((merchant) => {
             const receiptCount = getReceiptCount(merchant.id);
             const totalSpent = getTotalSpent(merchant.id);
             const needsReview = !merchant.isSolidified;
 
             return (
-              <div
+              <ListCard
                 key={merchant.id}
-                className="p-4 bg-card rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all duration-200 animate-fade-in"
-              >
-                {/* Top row: icon, name/meta, actions */}
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 bg-secondary">
-                    🏪
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm font-semibold text-foreground truncate max-w-[160px] sm:max-w-none">
-                        {merchant.name}
-                      </h3>
-                      {needsReview && (
-                        <Badge variant="outline" className="text-warning border-warning/50 text-xs px-1.5 py-0">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          Review
-                        </Badge>
-                      )}
-                    </div>
-                    {merchant.nif && (
-                      <p className="text-xs text-muted-foreground mt-0.5">NIF: {merchant.nif}</p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-0.5 shrink-0">
-                    <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(merchant)} aria-label="Edit store">
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(merchant)}
-                      aria-label="Delete store"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Bottom row: stats */}
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-                  <p className="text-xs text-muted-foreground">
-                    {receiptCount} receipt{receiptCount !== 1 ? "s" : ""}
-                  </p>
-                  <p className="text-sm font-semibold text-foreground">
-                    €{totalSpent.toFixed(2)}
-                  </p>
-                </div>
-              </div>
+                icon="🏪"
+                title={merchant.name}
+                badge={needsReview ? { label: "Review", variant: "warning" } : undefined}
+                subtitle={merchant.nif ? `NIF: ${merchant.nif}` : undefined}
+                meta={merchant.address}
+                value={`€${totalSpent.toFixed(2)}`}
+                valueSecondary={`${receiptCount} receipt${receiptCount !== 1 ? "s" : ""}`}
+                onEdit={() => handleEdit(merchant)}
+                onDelete={() => handleDelete(merchant)}
+              />
             );
           })
         )}
       </div>
 
-      <MerchantDialog open={dialogOpen} onOpenChange={setDialogOpen} merchant={selectedMerchant} onSave={handleSave} />
+      <MerchantDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        merchant={selectedMerchant}
+        onSave={handleSave}
+      />
 
       <DeleteConfirmDialog
         open={deleteDialogOpen}
