@@ -1,12 +1,11 @@
 {
-  "appId": "app.lovable.6092be5c5c2f4b4c8186e826da3e5073",
+  "appId": "app.lovable.expensetracker",
   "appName": "Expense Tracker",
   "webDir": "dist",
-  "server": {
-    "url": "https://6092be5c-5c2f-4b4c-8186-e826da3e5073.lovableproject.com?forceHideBadge=true",
-    "cleartext": true
-  },
   "android": {
-    "allowMixedContent": true
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "automatic"
   }
 }
