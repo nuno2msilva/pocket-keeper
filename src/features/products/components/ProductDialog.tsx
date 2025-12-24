@@ -74,8 +74,8 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
             {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="price">Default Price (€)</Label>
-            <Input id="price" type="number" step="0.01" min="0" value={defaultPrice} onChange={(e) => setDefaultPrice(e.target.value)} placeholder="e.g., 1.29" />
+            <Label htmlFor="price">Default Price (€{isWeighted ? "/kg" : "/unit"})</Label>
+            <Input id="price" type="number" step="0.01" min="0" value={defaultPrice} onChange={(e) => setDefaultPrice(e.target.value)} placeholder={isWeighted ? "e.g., 5.99" : "e.g., 1.29"} />
           </div>
           <div className="space-y-2">
             <Label>Category</Label>
@@ -88,8 +88,12 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
             </div>
           )}
           <div className="flex items-center justify-between">
-            <div className="space-y-0.5"><Label>Sold by Weight</Label><p className="text-caption text-muted-foreground">For products like meat, fruit, etc.</p></div>
-            <Switch checked={isWeighted} onCheckedChange={setIsWeighted} />
+            <Label>Pricing Type</Label>
+            <div className="flex items-center gap-2 text-sm">
+              <span className={!isWeighted ? "font-medium" : "text-muted-foreground"}>Unit</span>
+              <Switch checked={isWeighted} onCheckedChange={setIsWeighted} />
+              <span className={isWeighted ? "font-medium" : "text-muted-foreground"}>Weight</span>
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5"><Label>Exclude from Price History</Label><p className="text-caption text-muted-foreground">For promo items</p></div>
