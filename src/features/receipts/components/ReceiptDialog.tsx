@@ -7,16 +7,18 @@
  * - Barcode scanning for products (mobile only)
  * - Auto-complete for stores and products
  * - Line item management
+ * - Auto-calculated totals with placeholder for unidentified items
  */
 
-import { useState, useRef } from "react";
-import { Plus, Trash2, Camera, ChevronDown, Barcode } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Plus, Trash2, Camera, ChevronDown, Barcode, AlertTriangle, Package } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Receipt, ReceiptItem, Merchant, Product, ATCUDData } from "@/features/shared";
 import { QRScanner } from "./QRScanner";
@@ -24,6 +26,11 @@ import { BarcodeScanner } from "./BarcodeScanner";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useDeviceType } from "@/hooks/useDeviceType";
+
+// Constants
+const PLACEHOLDER_PRODUCT_ID = "__placeholder__";
+const PLACEHOLDER_PRODUCT_NAME = "Unidentified Items";
+const UNCATEGORIZED_CATEGORY_ID = "cat-other";
 
 interface ReceiptDialogProps {
   open: boolean;
@@ -61,6 +68,7 @@ interface AutocompleteInputProps<T> {
   getSubLabel?: (item: T) => string | undefined;
   placeholder?: string;
   showNew?: boolean;
+  disabled?: boolean;
 }
 
 function AutocompleteInput<T extends { id: string }>({
@@ -72,6 +80,7 @@ function AutocompleteInput<T extends { id: string }>({
   getSubLabel,
   placeholder,
   showNew = true,
+  disabled = false,
 }: AutocompleteInputProps<T>) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -116,8 +125,9 @@ function AutocompleteInput<T extends { id: string }>({
         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
+        disabled={disabled}
       />
-      {showSuggestions && (suggestions.length > 0 || (showNew && value.trim() && !isExactMatch)) && (
+      {showSuggestions && !disabled && (suggestions.length > 0 || (showNew && value.trim() && !isExactMatch)) && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden max-h-48 overflow-y-auto">
           {suggestions.map((item, index) => (
             <button
@@ -148,6 +158,12 @@ function AutocompleteInput<T extends { id: string }>({
   );
 }
 
+// Extended item type with input tracking
+type DialogItem = ReceiptItem & { 
+  inputName: string;
+  isPlaceholder?: boolean;
+};
+
 export function ReceiptDialog({
   open,
   onOpenChange,
@@ -171,9 +187,11 @@ export function ReceiptDialog({
   const [receiptNumber, setReceiptNumber] = useState("");
   const [hasCustomerNif, setHasCustomerNif] = useState(false);
   const [customerNif, setCustomerNif] = useState("");
-  const [items, setItems] = useState<(ReceiptItem & { inputName: string })[]>([]);
-  const [total, setTotal] = useState("");
+  const [items, setItems] = useState<DialogItem[]>([]);
   const [notes, setNotes] = useState("");
+  
+  // Scanned total from QR code - this is the reference total that cannot be manually edited
+  const [scannedTotal, setScannedTotal] = useState<number | null>(null);
   
   // Scanner visibility (only used on mobile)
   const [showScanner, setShowScanner] = useState(false);
@@ -183,8 +201,76 @@ export function ReceiptDialog({
   const [showNifDetails, setShowNifDetails] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Calculate totals from real items (excluding placeholder)
+  const realItems = useMemo(() => 
+    items.filter(item => !item.isPlaceholder), 
+    [items]
+  );
+  
+  const realItemsTotal = useMemo(() => 
+    realItems.reduce((sum, item) => sum + item.total, 0),
+    [realItems]
+  );
+
+  // Calculate the difference between scanned total and real items
+  const totalDifference = useMemo(() => {
+    if (scannedTotal === null) return 0;
+    return Math.max(0, scannedTotal - realItemsTotal);
+  }, [scannedTotal, realItemsTotal]);
+
+  // Check if items exceed the scanned total
+  const itemsExceedTotal = useMemo(() => {
+    if (scannedTotal === null) return false;
+    return realItemsTotal > scannedTotal + 0.01; // Small tolerance for floating point
+  }, [scannedTotal, realItemsTotal]);
+
+  // The display total is either scanned or calculated from items
+  const displayTotal = scannedTotal ?? realItemsTotal;
+
+  // Update placeholder item when totals change
+  useEffect(() => {
+    if (scannedTotal === null) {
+      // No scanned total - remove any placeholder
+      setItems(prev => prev.filter(item => !item.isPlaceholder));
+      return;
+    }
+
+    const needsPlaceholder = totalDifference > 0.01;
+    const existingPlaceholder = items.find(item => item.isPlaceholder);
+
+    if (needsPlaceholder) {
+      if (existingPlaceholder) {
+        // Update existing placeholder amount
+        if (Math.abs(existingPlaceholder.total - totalDifference) > 0.01) {
+          setItems(prev => prev.map(item => 
+            item.isPlaceholder 
+              ? { ...item, unitPrice: totalDifference, total: totalDifference }
+              : item
+          ));
+        }
+      } else {
+        // Add new placeholder
+        const placeholderItem: DialogItem = {
+          id: `placeholder-${Date.now()}`,
+          productId: PLACEHOLDER_PRODUCT_ID,
+          productName: PLACEHOLDER_PRODUCT_NAME,
+          inputName: PLACEHOLDER_PRODUCT_NAME,
+          quantity: 1,
+          unitPrice: totalDifference,
+          total: totalDifference,
+          isPlaceholder: true,
+          excludeFromPriceHistory: true,
+        };
+        setItems(prev => [...prev, placeholderItem]);
+      }
+    } else if (existingPlaceholder) {
+      // Remove placeholder when items match or exceed total
+      setItems(prev => prev.filter(item => !item.isPlaceholder));
+    }
+  }, [scannedTotal, totalDifference]);
+
   // Reset form when dialog opens
-  useState(() => {
+  useEffect(() => {
     if (open) {
       if (receipt) {
         const m = merchants.find((m) => m.id === receipt.merchantId);
@@ -195,14 +281,32 @@ export function ReceiptDialog({
         setReceiptNumber(receipt.receiptNumber || "");
         setHasCustomerNif(receipt.hasCustomerNif);
         setCustomerNif(receipt.customerNif || "");
-        setItems(receipt.items.map((item) => ({ ...item, inputName: item.productName })));
-        setTotal(receipt.total.toString());
+        
+        // Check if there's a placeholder item in the saved receipt
+        const hasPlaceholderItem = receipt.items.some(
+          item => item.productId === PLACEHOLDER_PRODUCT_ID
+        );
+        
+        setItems(receipt.items.map((item) => ({ 
+          ...item, 
+          inputName: item.productName,
+          isPlaceholder: item.productId === PLACEHOLDER_PRODUCT_ID,
+        })));
+        
+        // If receipt has a placeholder, calculate what the scanned total was
+        if (hasPlaceholderItem) {
+          setScannedTotal(receipt.total);
+        } else {
+          // No placeholder means total was calculated from items
+          setScannedTotal(null);
+        }
+        
         setNotes(receipt.notes || "");
       } else {
         resetForm();
       }
     }
-  });
+  }, [open, receipt, merchants]);
 
   const resetForm = () => {
     setMerchantName("");
@@ -213,7 +317,7 @@ export function ReceiptDialog({
     setHasCustomerNif(false);
     setCustomerNif("");
     setItems([]);
-    setTotal("");
+    setScannedTotal(null);
     setNotes("");
     setErrors({});
   };
@@ -222,7 +326,6 @@ export function ReceiptDialog({
     setShowScanner(false);
     if (data.date) setDate(data.date);
     if (data.time) setTime(data.time);
-    if (data.total) setTotal(data.total.toString());
     if (data.receiptNumber) setReceiptNumber(data.receiptNumber);
     if (data.customerNif) {
       setHasCustomerNif(true);
@@ -235,6 +338,12 @@ export function ReceiptDialog({
         setMerchantName(foundMerchant.name);
       }
     }
+    
+    // Set scanned total - this will trigger placeholder creation
+    if (data.total && data.total > 0) {
+      setScannedTotal(data.total);
+      toast.success(`Receipt scanned: €${data.total.toFixed(2)}`);
+    }
   };
 
   const handleBarcodeScan = (barcode: string) => {
@@ -245,7 +354,7 @@ export function ReceiptDialog({
     
     if (existingProduct) {
       // Add item with found product
-      const newItem: ReceiptItem & { inputName: string } = {
+      const newItem: DialogItem = {
         id: `item-${Date.now()}`,
         productId: existingProduct.id,
         productName: existingProduct.name,
@@ -253,12 +362,13 @@ export function ReceiptDialog({
         quantity: 1,
         unitPrice: existingProduct.defaultPrice || 0,
         total: existingProduct.defaultPrice || 0,
+        isPlaceholder: false,
       };
-      setItems([...items, newItem]);
+      setItems(prev => [...prev.filter(i => !i.isPlaceholder), newItem]);
       toast.success(`Found: ${existingProduct.name}`);
     } else {
       // Add empty item with barcode info
-      const newItem: ReceiptItem & { inputName: string } = {
+      const newItem: DialogItem = {
         id: `item-${Date.now()}`,
         productId: "",
         productName: "",
@@ -266,14 +376,15 @@ export function ReceiptDialog({
         quantity: 1,
         unitPrice: 0,
         total: 0,
+        isPlaceholder: false,
       };
-      setItems([...items, newItem]);
+      setItems(prev => [...prev.filter(i => !i.isPlaceholder), newItem]);
       toast.info("Product not found. Enter name manually.");
     }
   };
 
   const addItem = () => {
-    const newItem: ReceiptItem & { inputName: string } = {
+    const newItem: DialogItem = {
       id: `item-${Date.now()}`,
       productId: "",
       productName: "",
@@ -281,17 +392,27 @@ export function ReceiptDialog({
       quantity: 1,
       unitPrice: 0,
       total: 0,
+      isPlaceholder: false,
     };
-    setItems([...items, newItem]);
+    // Add before placeholder if one exists
+    setItems(prev => {
+      const withoutPlaceholder = prev.filter(i => !i.isPlaceholder);
+      const placeholder = prev.find(i => i.isPlaceholder);
+      return placeholder 
+        ? [...withoutPlaceholder, newItem, placeholder]
+        : [...withoutPlaceholder, newItem];
+    });
   };
 
-  const updateItem = (index: number, updates: Partial<ReceiptItem & { inputName: string }>) => {
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], ...updates };
-    if ("quantity" in updates || "unitPrice" in updates) {
-      newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
-    }
-    setItems(newItems);
+  const updateItem = (index: number, updates: Partial<DialogItem>) => {
+    setItems(prev => {
+      const newItems = [...prev];
+      newItems[index] = { ...newItems[index], ...updates };
+      if ("quantity" in updates || "unitPrice" in updates) {
+        newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
+      }
+      return newItems;
+    });
   };
 
   const handleProductSelect = (index: number, product: Product) => {
@@ -305,7 +426,9 @@ export function ReceiptDialog({
   };
 
   const removeItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index));
+    const itemToRemove = items[index];
+    if (itemToRemove.isPlaceholder) return; // Can't remove placeholder manually
+    setItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const validate = (): boolean => {
@@ -316,8 +439,12 @@ export function ReceiptDialog({
     if (!date) {
       newErrors.date = "Date is required";
     }
-    if (!total && items.length === 0) {
-      newErrors.total = "Total or items required";
+    if (itemsExceedTotal) {
+      newErrors.items = `Items total (€${realItemsTotal.toFixed(2)}) exceeds receipt total (€${scannedTotal?.toFixed(2)})`;
+    }
+    // When no scanned total, need at least one real item
+    if (scannedTotal === null && realItems.length === 0) {
+      newErrors.items = "Add at least one item";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -333,9 +460,22 @@ export function ReceiptDialog({
       finalMerchantId = merchant.id;
     }
 
-    // Process items
+    // Process items - create products for new items
     const processedItems: ReceiptItem[] = items
       .map((item) => {
+        if (item.isPlaceholder) {
+          // Keep placeholder as-is, it belongs to "Other/Uncategorized" category
+          return {
+            id: item.id,
+            productId: PLACEHOLDER_PRODUCT_ID,
+            productName: PLACEHOLDER_PRODUCT_NAME,
+            quantity: 1,
+            unitPrice: item.total,
+            total: item.total,
+            excludeFromPriceHistory: true,
+          };
+        }
+        
         let productId = item.productId;
         let productName = item.productName || item.inputName;
         if (!productId && item.inputName.trim()) {
@@ -352,9 +492,10 @@ export function ReceiptDialog({
           total: item.total,
         };
       })
-      .filter((item) => item.productName.trim());
+      .filter((item) => item.productName.trim() || item.productId === PLACEHOLDER_PRODUCT_ID);
 
-    const calculatedTotal = processedItems.reduce((sum, item) => sum + item.total, 0);
+    // Final total is the scanned total or calculated from items
+    const finalTotal = scannedTotal ?? processedItems.reduce((sum, item) => sum + item.total, 0);
 
     onSave({
       merchantId: finalMerchantId,
@@ -364,10 +505,16 @@ export function ReceiptDialog({
       hasCustomerNif,
       customerNif: hasCustomerNif ? customerNif : undefined,
       items: processedItems,
-      total: parseFloat(total) || calculatedTotal,
+      total: finalTotal,
       notes: notes || undefined,
     });
     onOpenChange(false);
+  };
+
+  // Clear scanned total (allow user to remove the constraint)
+  const handleClearScannedTotal = () => {
+    setScannedTotal(null);
+    toast.info("Scanned total cleared. Total will be calculated from items.");
   };
 
   if (showScanner) {
@@ -496,6 +643,73 @@ export function ReceiptDialog({
             </CollapsibleContent>
           </Collapsible>
 
+          {/* Total Display (read-only) */}
+          <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {scannedTotal !== null ? "Receipt Total (scanned)" : "Calculated Total"}
+                </span>
+                {scannedTotal !== null && (
+                  <Badge variant="secondary" className="text-xs">
+                    From QR
+                  </Badge>
+                )}
+              </div>
+              <span className="text-2xl font-bold">
+                €{displayTotal.toFixed(2)}
+              </span>
+            </div>
+            
+            {scannedTotal !== null && (
+              <>
+                <div className="flex justify-between text-sm border-t border-border pt-2">
+                  <span className="text-muted-foreground">Items subtotal:</span>
+                  <span className={cn(itemsExceedTotal && "text-destructive font-medium")}>
+                    €{realItemsTotal.toFixed(2)}
+                  </span>
+                </div>
+                {totalDifference > 0.01 && (
+                  <div className="flex justify-between text-sm text-amber-600 dark:text-amber-400">
+                    <span className="flex items-center gap-1">
+                      <Package className="w-3 h-3" />
+                      Unidentified:
+                    </span>
+                    <span>€{totalDifference.toFixed(2)}</span>
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full mt-1 text-xs"
+                  onClick={handleClearScannedTotal}
+                >
+                  Clear scanned total
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Warning when items exceed scanned total */}
+          {itemsExceedTotal && (
+            <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-destructive">
+                  Items exceed receipt total
+                </p>
+                <p className="text-xs text-destructive/80">
+                  Remove items or adjust prices to match the scanned total of €{scannedTotal?.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {errors.items && !itemsExceedTotal && (
+            <p className="text-sm text-destructive">{errors.items}</p>
+          )}
+
           {/* Items */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -522,100 +736,109 @@ export function ReceiptDialog({
 
             {items.length === 0 ? (
               <p className="text-caption text-muted-foreground text-center py-4">
-                No items yet. Add products or just enter the total.
+                {scannedTotal !== null 
+                  ? "Add items to identify your purchases. Unidentified amount will be tracked separately."
+                  : "No items yet. Add products to your receipt."}
               </p>
             ) : (
               <div className="space-y-3">
                 {items.map((item, index) => (
-                  <div key={item.id} className="p-3 bg-secondary rounded-lg space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <AutocompleteInput
-                          value={item.inputName}
-                          onChange={(value) =>
-                            updateItem(index, { inputName: value, productName: value })
-                          }
-                          onSelect={(product) => handleProductSelect(index, product)}
-                          items={products.filter((p) => fuzzyMatch(item.inputName, p.name))}
-                          getLabel={(p) => p.name}
-                          getSubLabel={(p) =>
-                            p.defaultPrice ? `€${p.defaultPrice.toFixed(2)}` : undefined
-                          }
-                          placeholder="Type product name..."
-                        />
+                  <div 
+                    key={item.id} 
+                    className={cn(
+                      "p-3 rounded-lg space-y-2",
+                      item.isPlaceholder 
+                        ? "bg-amber-50 dark:bg-amber-950/30 border border-dashed border-amber-300 dark:border-amber-700" 
+                        : "bg-secondary"
+                    )}
+                  >
+                    {item.isPlaceholder ? (
+                      // Placeholder item display
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                          <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                            {PLACEHOLDER_PRODUCT_NAME}
+                          </span>
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400">
+                            Auto
+                          </Badge>
+                        </div>
+                        <span className="font-semibold text-amber-700 dark:text-amber-300">
+                          €{item.total.toFixed(2)}
+                        </span>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => removeItem(index)}
-                        aria-label="Remove item"
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <Label className="text-[11px]">Qty</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateItem(index, { quantity: parseInt(e.target.value) || 1 })
-                          }
-                          aria-label="Quantity"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-[11px]">Price</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={item.unitPrice}
-                          onChange={(e) =>
-                            updateItem(index, { unitPrice: parseFloat(e.target.value) || 0 })
-                          }
-                          aria-label="Unit price"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-[11px]">Total</Label>
-                        <Input
-                          value={`€${item.total.toFixed(2)}`}
-                          disabled
-                          className="bg-muted"
-                          aria-label="Item total"
-                        />
-                      </div>
-                    </div>
+                    ) : (
+                      // Regular item
+                      <>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <AutocompleteInput
+                              value={item.inputName}
+                              onChange={(value) =>
+                                updateItem(index, { inputName: value, productName: value })
+                              }
+                              onSelect={(product) => handleProductSelect(index, product)}
+                              items={products.filter((p) => fuzzyMatch(item.inputName, p.name))}
+                              getLabel={(p) => p.name}
+                              getSubLabel={(p) =>
+                                p.defaultPrice ? `€${p.defaultPrice.toFixed(2)}` : undefined
+                              }
+                              placeholder="Type product name..."
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => removeItem(index)}
+                            aria-label="Remove item"
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <Label className="text-[11px]">Qty</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) =>
+                                updateItem(index, { quantity: parseInt(e.target.value) || 1 })
+                              }
+                              aria-label="Quantity"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[11px]">Price</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.unitPrice}
+                              onChange={(e) =>
+                                updateItem(index, { unitPrice: parseFloat(e.target.value) || 0 })
+                              }
+                              aria-label="Unit price"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[11px]">Total</Label>
+                            <Input
+                              value={`€${item.total.toFixed(2)}`}
+                              disabled
+                              className="bg-muted"
+                              aria-label="Item total"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Total */}
-          <div className="space-y-2">
-            <Label htmlFor="total">Total (€) *</Label>
-            <Input
-              id="total"
-              type="number"
-              step="0.01"
-              min="0"
-              value={total}
-              onChange={(e) => {
-                setTotal(e.target.value);
-                setErrors((err) => ({ ...err, total: "" }));
-              }}
-              placeholder={
-                items.length > 0
-                  ? `Auto: ${items.reduce((s, i) => s + i.total, 0).toFixed(2)}`
-                  : "0.00"
-              }
-            />
-            {errors.total && <p className="text-sm text-destructive">{errors.total}</p>}
           </div>
 
           {/* Notes */}
@@ -635,7 +858,9 @@ export function ReceiptDialog({
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>{receipt ? "Save" : "Create"}</Button>
+          <Button onClick={handleSave} disabled={itemsExceedTotal}>
+            {receipt ? "Save" : "Create"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
