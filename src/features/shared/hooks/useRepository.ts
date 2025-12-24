@@ -3,7 +3,7 @@ import { Category, Subcategory, Merchant, Product, Receipt } from "../types";
 import { getStoredData, setStoredData, generateId } from "../data/repository";
 import { DEFAULT_CATEGORIES, DEFAULT_SUBCATEGORIES, SAMPLE_MERCHANTS, SAMPLE_PRODUCTS, SAMPLE_RECEIPTS } from "../data/defaultCategories";
 
-// Categories Hook - Fixed categories, users can only edit name/icon
+// Categories Hook - Users can edit, add, and delete custom categories
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>(() =>
     getStoredData("categories", DEFAULT_CATEGORIES)
@@ -13,10 +13,20 @@ export function useCategories() {
     setStoredData("categories", categories);
   }, [categories]);
 
+  const addCategory = useCallback((category: Omit<Category, "id">) => {
+    const newCategory = { ...category, id: generateId("cat") };
+    setCategories((prev) => [...prev, newCategory]);
+    return newCategory;
+  }, []);
+
   const updateCategory = useCallback((id: string, updates: Partial<Category>) => {
     setCategories((prev) =>
       prev.map((c) => (c.id === id ? { ...c, ...updates } : c))
     );
+  }, []);
+
+  const deleteCategory = useCallback((id: string) => {
+    setCategories((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
   // Reset to default categories
@@ -24,7 +34,7 @@ export function useCategories() {
     setCategories(DEFAULT_CATEGORIES);
   }, []);
 
-  return { categories, updateCategory, resetToDefaults };
+  return { categories, addCategory, updateCategory, deleteCategory, resetToDefaults };
 }
 
 // Subcategories Hook - User-created, auto-deleted when empty

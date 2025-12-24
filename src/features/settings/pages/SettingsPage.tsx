@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Download, Upload, RotateCcw, CheckCircle2, AlertCircle, Eye, MousePointer2 } from "lucide-react";
+import { Download, Upload, RotateCcw, CheckCircle2, AlertCircle, Eye } from "lucide-react";
 import { AppLayout, PageHeader } from "@/features/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { exportAllData, importData } from "@/features/shared/data/repository";
 import { toast } from "sonner";
 import { DeleteConfirmDialog } from "@/features/shared/components/DeleteConfirmDialog";
 import { useAccessibility } from "@/features/shared/hooks/useAccessibility";
+import { CategoryEditor } from "@/features/settings/components/CategoryEditor";
 
 export default function SettingsPage() {
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle");
@@ -83,6 +84,9 @@ export default function SettingsPage() {
       />
 
       <div className="p-4 space-y-4">
+        {/* Categories Card */}
+        <CategoryEditor />
+
         {/* Accessibility Card */}
         <Card>
           <CardHeader className="pb-3">
