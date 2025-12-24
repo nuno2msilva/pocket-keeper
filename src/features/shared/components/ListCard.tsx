@@ -3,6 +3,7 @@ import { Pencil, Trash2, ChevronRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { SwipeableItem } from "./SwipeableItem";
 
 interface ListCardProps {
   /** Icon/emoji or element to show on the left */
@@ -32,6 +33,8 @@ interface ListCardProps {
   onClick?: () => void;
   /** Show chevron (for navigable items) */
   showChevron?: boolean;
+  /** Enable swipe gestures for edit/delete */
+  swipeable?: boolean;
   /** Additional class names */
   className?: string;
 }
@@ -49,10 +52,12 @@ export function ListCard({
   onDelete,
   onClick,
   showChevron,
+  swipeable = true,
   className,
 }: ListCardProps) {
   const hasActions = onEdit || onDelete;
   const isClickable = !!onClick;
+  const canSwipe = swipeable && hasActions;
 
   const content = (
     <>
@@ -93,7 +98,8 @@ export function ListCard({
           )}
         </div>
 
-        {hasActions && (
+        {/* Only show button actions if not swipeable */}
+        {hasActions && !canSwipe && (
           <div className="flex gap-0.5 shrink-0">
             {onEdit && (
               <Button
@@ -144,22 +150,18 @@ export function ListCard({
     </>
   );
 
-  if (isClickable) {
-    return (
-      <button
-        onClick={onClick}
-        className={cn(
-          "w-full text-left p-4 bg-card rounded-lg border border-border",
-          "hover:border-primary/30 hover:shadow-sm transition-all duration-200",
-          className
-        )}
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return (
+  const cardContent = isClickable ? (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full text-left p-4 bg-card rounded-lg border border-border",
+        "hover:border-primary/30 hover:shadow-sm transition-all duration-200",
+        className
+      )}
+    >
+      {content}
+    </button>
+  ) : (
     <div
       className={cn(
         "p-4 bg-card rounded-lg border border-border",
@@ -170,4 +172,18 @@ export function ListCard({
       {content}
     </div>
   );
+
+  if (canSwipe) {
+    return (
+      <SwipeableItem
+        onEdit={onEdit}
+        onDelete={onDelete}
+        className="rounded-lg"
+      >
+        {cardContent}
+      </SwipeableItem>
+    );
+  }
+
+  return cardContent;
 }

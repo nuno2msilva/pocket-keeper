@@ -5,10 +5,12 @@
  * It provides:
  * - Consistent background and spacing
  * - Bottom navigation (can be hidden)
+ * - Quick add FAB for receipts
  * - Responsive design that works on mobile, tablet, and desktop
  */
 
 import { BottomNav } from "./BottomNav";
+import { QuickAddFAB } from "./QuickAddFAB";
 
 interface AppLayoutProps {
   /** The page content to display */
@@ -35,6 +37,9 @@ export function AppLayout({ children, hideNav }: AppLayoutProps) {
       >
         {children}
       </main>
+      
+      {/* Quick add FAB */}
+      {!hideNav && <QuickAddFAB />}
       
       {/* Bottom navigation - only shown if hideNav is false */}
       {!hideNav && <BottomNav />}

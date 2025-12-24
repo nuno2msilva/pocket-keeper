@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Receipt as ReceiptIcon, Check } from "lucide-react";
 import {
   AppLayout,
@@ -27,6 +27,7 @@ const SORT_OPTIONS: SortOption[] = [
 
 export default function ReceiptsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { receipts, addReceipt, updateReceipt } = useReceipts();
   const { merchants, getOrCreateMerchant, searchMerchants } = useMerchants();
   const { products, getOrCreateProduct, findProductByBarcode } = useProducts();
@@ -39,6 +40,15 @@ export default function ReceiptsPage() {
   const [currentSort, setCurrentSort] = useState("date");
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  // Handle quick add from FAB
+  useEffect(() => {
+    if (searchParams.get("add") === "true") {
+      setSelectedReceipt(null);
+      setDialogOpen(true);
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const getMerchant = (merchantId: string) => merchants.find((m) => m.id === merchantId);
 
