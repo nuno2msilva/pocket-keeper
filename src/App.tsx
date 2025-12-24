@@ -7,13 +7,14 @@
  * - Lazy loading for better performance
  */
 
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { loadDemoDataIfNeeded } from "@/features/shared/data/demoData";
 
 // Loading component shown while pages load
 function PageLoader() {
@@ -25,6 +26,14 @@ function PageLoader() {
       </div>
     </div>
   );
+}
+
+// Initialize demo data on first load
+function DemoDataInitializer({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    loadDemoDataIfNeeded();
+  }, []);
+  return <>{children}</>;
 }
 
 // ============================================================================
@@ -55,37 +64,39 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {/* Toast notifications */}
-        <Toaster />
-        <Sonner />
-        
-        {/* Router setup */}
-        <BrowserRouter>
-          {/* Suspense shows loader while lazy components load */}
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              {/* Dashboard (home) */}
-              <Route path="/" element={<DashboardPage />} />
-              
-              {/* Receipts */}
-              <Route path="/receipts" element={<ReceiptsPage />} />
-              <Route path="/receipts/:id" element={<ReceiptDetail />} />
-              
-              {/* Data management pages */}
-              <Route path="/merchants" element={<MerchantsPage />} />
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/categories" element={<CategoriesPage />} />
-              <Route path="/categories/:id" element={<CategoryDetailPage />} />
-              
-              {/* Analytics and settings */}
-              <Route path="/insights" element={<InsightsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              
-              {/* 404 fallback */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+        <DemoDataInitializer>
+          {/* Toast notifications */}
+          <Toaster />
+          <Sonner />
+          
+          {/* Router setup */}
+          <BrowserRouter>
+            {/* Suspense shows loader while lazy components load */}
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* Dashboard (home) */}
+                <Route path="/" element={<DashboardPage />} />
+                
+                {/* Receipts */}
+                <Route path="/receipts" element={<ReceiptsPage />} />
+                <Route path="/receipts/:id" element={<ReceiptDetail />} />
+                
+                {/* Data management pages */}
+                <Route path="/merchants" element={<MerchantsPage />} />
+                <Route path="/products" element={<ProductsPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
+                <Route path="/categories/:id" element={<CategoryDetailPage />} />
+                
+                {/* Analytics and settings */}
+                <Route path="/insights" element={<InsightsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                
+                {/* 404 fallback */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </DemoDataInitializer>
       </TooltipProvider>
     </QueryClientProvider>
   </ThemeProvider>
