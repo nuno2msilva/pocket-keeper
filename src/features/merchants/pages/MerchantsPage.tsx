@@ -90,49 +90,55 @@ export default function MerchantsPage() {
             return (
               <div
                 key={merchant.id}
-                className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all duration-200 animate-fade-in min-h-[72px]"
+                className="p-4 bg-card rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all duration-200 animate-fade-in"
               >
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 bg-secondary">
-                  🏪
-                </div>
+                {/* Top row: icon, name/meta, actions */}
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 bg-secondary">
+                    🏪
+                  </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-body font-semibold text-foreground truncate">
-                      {merchant.name}
-                    </h3>
-                    {needsReview && (
-                      <Badge variant="outline" className="text-warning border-warning/50 shrink-0">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        Review
-                      </Badge>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-semibold text-foreground truncate max-w-[160px] sm:max-w-none">
+                        {merchant.name}
+                      </h3>
+                      {needsReview && (
+                        <Badge variant="outline" className="text-warning border-warning/50 text-xs px-1.5 py-0">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          Review
+                        </Badge>
+                      )}
+                    </div>
+                    {merchant.nif && (
+                      <p className="text-xs text-muted-foreground mt-0.5">NIF: {merchant.nif}</p>
                     )}
                   </div>
-                  <p className="text-caption text-muted-foreground">
+
+                  <div className="flex gap-0.5 shrink-0">
+                    <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(merchant)} aria-label="Edit store">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(merchant)}
+                      aria-label="Delete store"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Bottom row: stats */}
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground">
                     {receiptCount} receipt{receiptCount !== 1 ? "s" : ""}
                   </p>
-                  {merchant.nif && (
-                    <p className="text-[11px] text-muted-foreground">NIF: {merchant.nif}</p>
-                  )}
-                </div>
-
-                <div className="text-right shrink-0">
-                  <p className="text-body font-semibold text-foreground">€{totalSpent.toFixed(2)}</p>
-                </div>
-
-                <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(merchant)} aria-label="Edit store">
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(merchant)}
-                    aria-label="Delete store"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <p className="text-sm font-semibold text-foreground">
+                    €{totalSpent.toFixed(2)}
+                  </p>
                 </div>
               </div>
             );
