@@ -3,44 +3,38 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Merchant, Category } from "@/types/expense";
+import { Merchant } from "@/types/expense";
 
 interface MerchantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   merchant?: Merchant | null;
-  categories: Category[];
   onSave: (merchant: Omit<Merchant, "id">) => void;
 }
 
-export function MerchantDialog({ open, onOpenChange, merchant, categories, onSave }: MerchantDialogProps) {
+export function MerchantDialog({ open, onOpenChange, merchant, onSave }: MerchantDialogProps) {
   const [name, setName] = useState("");
   const [nif, setNif] = useState("");
   const [address, setAddress] = useState("");
-  const [categoryId, setCategoryId] = useState("");
 
   useEffect(() => {
     if (merchant) {
       setName(merchant.name);
       setNif(merchant.nif || "");
       setAddress(merchant.address || "");
-      setCategoryId(merchant.categoryId);
     } else {
       setName("");
       setNif("");
       setAddress("");
-      setCategoryId(categories[0]?.id || "");
     }
-  }, [merchant, categories, open]);
+  }, [merchant, open]);
 
   const handleSave = () => {
-    if (!name.trim() || !categoryId) return;
+    if (!name.trim()) return;
     onSave({
       name: name.trim(),
       nif: nif.trim() || undefined,
       address: address.trim() || undefined,
-      categoryId,
     });
     onOpenChange(false);
   };
@@ -75,22 +69,6 @@ export function MerchantDialog({ open, onOpenChange, merchant, categories, onSav
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category *</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="address">Address</Label>
             <Input
               id="address"
@@ -105,7 +83,7 @@ export function MerchantDialog({ open, onOpenChange, merchant, categories, onSav
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!name.trim() || !categoryId}>
+          <Button onClick={handleSave} disabled={!name.trim()}>
             {merchant ? "Save" : "Create"}
           </Button>
         </DialogFooter>

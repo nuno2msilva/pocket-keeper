@@ -1,3 +1,9 @@
+export interface Subcategory {
+  id: string;
+  name: string;
+  parentCategoryId: string;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -8,7 +14,6 @@ export interface Category {
 export interface Merchant {
   id: string;
   name: string;
-  categoryId: string;
   nif?: string;
   address?: string;
 }
@@ -16,14 +21,17 @@ export interface Merchant {
 export interface Product {
   id: string;
   name: string;
-  categoryId: string;
+  categoryId?: string;
+  subcategoryId?: string;
   defaultPrice?: number;
   excludeFromPriceHistory?: boolean;
+  isSolidified?: boolean; // true once user saves it in Products page
 }
 
 export interface ReceiptItem {
   id: string;
   productId: string;
+  productName: string; // Store name directly for flexibility
   quantity: number;
   unitPrice: number;
   total: number;

@@ -5,43 +5,60 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Product, Category } from "@/types/expense";
+import { Product, Category, Subcategory } from "@/types/expense";
 
 interface ProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product?: Product | null;
   categories: Category[];
+  subcategories: Subcategory[];
   onSave: (product: Omit<Product, "id">) => void;
 }
 
-export function ProductDialog({ open, onOpenChange, product, categories, onSave }: ProductDialogProps) {
+export function ProductDialog({ open, onOpenChange, product, categories, subcategories, onSave }: ProductDialogProps) {
   const [name, setName] = useState("");
   const [defaultPrice, setDefaultPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [subcategoryId, setSubcategoryId] = useState("");
   const [excludeFromPriceHistory, setExcludeFromPriceHistory] = useState(false);
+
+  const filteredSubcategories = categoryId 
+    ? subcategories.filter(s => s.parentCategoryId === categoryId)
+    : [];
 
   useEffect(() => {
     if (product) {
       setName(product.name);
       setDefaultPrice(product.defaultPrice?.toString() || "");
-      setCategoryId(product.categoryId);
+      setCategoryId(product.categoryId || "");
+      setSubcategoryId(product.subcategoryId || "");
       setExcludeFromPriceHistory(product.excludeFromPriceHistory || false);
     } else {
       setName("");
       setDefaultPrice("");
-      setCategoryId(categories[0]?.id || "");
+      setCategoryId("");
+      setSubcategoryId("");
       setExcludeFromPriceHistory(false);
     }
-  }, [product, categories, open]);
+  }, [product, open]);
+
+  useEffect(() => {
+    // Reset subcategory when category changes
+    if (!filteredSubcategories.find(s => s.id === subcategoryId)) {
+      setSubcategoryId("");
+    }
+  }, [categoryId, filteredSubcategories, subcategoryId]);
 
   const handleSave = () => {
-    if (!name.trim() || !categoryId) return;
+    if (!name.trim()) return;
     onSave({
       name: name.trim(),
       defaultPrice: defaultPrice ? parseFloat(defaultPrice) : undefined,
-      categoryId,
+      categoryId: categoryId || undefined,
+      subcategoryId: subcategoryId || undefined,
       excludeFromPriceHistory,
+      isSolidified: true,
     });
     onOpenChange(false);
   };
@@ -60,7 +77,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, onSave 
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Milk 1L"
+              placeholder="e.g., Leite Mimosa 1L"
             />
           </div>
 
@@ -78,10 +95,10 @@ export function ProductDialog({ open, onOpenChange, product, categories, onSave 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category *</Label>
+            <Label htmlFor="category">Category</Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder="Select category (optional)" />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
@@ -92,6 +109,24 @@ export function ProductDialog({ open, onOpenChange, product, categories, onSave 
               </SelectContent>
             </Select>
           </div>
+
+          {filteredSubcategories.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="subcategory">Subcategory</Label>
+              <Select value={subcategoryId} onValueChange={setSubcategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select subcategory (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredSubcategories.map((sub) => (
+                    <SelectItem key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
@@ -111,7 +146,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, onSave 
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!name.trim() || !categoryId}>
+          <Button onClick={handleSave} disabled={!name.trim()}>
             {product ? "Save" : "Create"}
           </Button>
         </DialogFooter>
