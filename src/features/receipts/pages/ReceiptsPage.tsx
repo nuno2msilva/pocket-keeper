@@ -30,7 +30,7 @@ export default function ReceiptsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { receipts, addReceipt, updateReceipt } = useReceipts();
   const { merchants, getOrCreateMerchant, searchMerchants } = useMerchants();
-  const { products, getOrCreateProduct, findProductByBarcode } = useProducts();
+  const { products, getOrCreateProduct, findProductByBarcode, updatePricesFromReceipt } = useProducts();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
@@ -152,6 +152,9 @@ export default function ReceiptsPage() {
   };
 
   const handleSave = (data: Omit<Receipt, "id">) => {
+    // Update price history for all items
+    updatePricesFromReceipt(data.items, data.merchantId, data.date);
+    
     if (selectedReceipt) {
       updateReceipt(selectedReceipt.id, data);
       toast.success("Receipt updated");

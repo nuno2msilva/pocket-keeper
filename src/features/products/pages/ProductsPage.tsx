@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Package } from "lucide-react";
 import {
   AppLayout,
@@ -26,6 +27,7 @@ const SORT_OPTIONS: SortOption[] = [
 ];
 
 export default function ProductsPage() {
+  const navigate = useNavigate();
   const { products, updateProduct, deleteProduct, addProduct } = useProducts();
   const { categories } = useCategories();
   const { subcategories, addSubcategory } = useSubcategories();
@@ -212,8 +214,10 @@ export default function ProductsPage() {
                 badge={needsReview ? { label: "Review", variant: "warning" } : undefined}
                 subtitle={`${category?.name || "Uncategorized"}${subcategory ? ` › ${subcategory.name}` : ""}`}
                 value={product.defaultPrice ? `€${product.defaultPrice.toFixed(2)}${product.isWeighted ? "/kg" : "/un"}` : undefined}
+                onClick={() => navigate(`/products/${product.id}`)}
                 onEdit={() => handleEdit(product)}
                 onDelete={() => handleDelete(product)}
+                showChevron
               />
             );
           })

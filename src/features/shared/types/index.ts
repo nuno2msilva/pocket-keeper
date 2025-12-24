@@ -65,7 +65,7 @@ export interface Product {
   categoryId?: string;
   /** Subcategory for more specific grouping (optional) */
   subcategoryId?: string;
-  /** Typical price for quick entry (optional) */
+  /** Default/latest price for quick entry */
   defaultPrice?: number;
   /** If true, this is a weighted product (sold by weight, not unit) */
   isWeighted?: boolean;
@@ -75,6 +75,21 @@ export interface Product {
   isSolidified?: boolean;
   /** Barcode for scanning (optional) */
   barcode?: string;
+  /** Price history tracking - stores price per store over time */
+  priceHistory?: PriceHistoryEntry[];
+}
+
+// ============================================================================
+// PRICE HISTORY ENTRY
+// Tracks a product's price at a specific store and time
+// ============================================================================
+export interface PriceHistoryEntry {
+  /** When this price was recorded (YYYY-MM-DD) */
+  date: string;
+  /** The price at this time (per unit or per kg) */
+  price: number;
+  /** Which store had this price */
+  merchantId: string;
 }
 
 // ============================================================================
@@ -125,18 +140,6 @@ export interface Receipt {
   notes?: string;
 }
 
-// ============================================================================
-// PRICE HISTORY
-// Tracks how a product's price changes over time
-// ============================================================================
-export interface PriceHistoryEntry {
-  /** When this price was recorded (YYYY-MM-DD) */
-  date: string;
-  /** The price at this time */
-  price: number;
-  /** Which store had this price */
-  merchantId: string;
-}
 
 // ============================================================================
 // ATCUD DATA
