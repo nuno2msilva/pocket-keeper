@@ -11,17 +11,17 @@
  * - Works on all screen sizes
  */
 
-import { Receipt, Store, Package, Grid3X3, Settings } from "lucide-react";
+import { Home, Receipt, Store, Package, BarChart3 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 // Define all navigation items with their routes and icons
 const NAV_ITEMS = [
-  { to: "/", icon: Receipt, label: "Receipts" },
+  { to: "/", icon: Home, label: "Home" },
+  { to: "/receipts", icon: Receipt, label: "Receipts" },
   { to: "/merchants", icon: Store, label: "Stores" },
   { to: "/products", icon: Package, label: "Products" },
-  { to: "/categories", icon: Grid3X3, label: "Categories" },
-  { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "/insights", icon: BarChart3, label: "Insights" },
 ];
 
 export function BottomNav() {
