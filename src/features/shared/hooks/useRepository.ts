@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Category, Subcategory, Merchant, Product, Receipt } from "../types";
+import { Category, Subcategory, Merchant, Product, Receipt, ReceiptItem, PriceHistoryEntry } from "../types";
 import { getStoredData, setStoredData, generateId } from "../data/repository";
 import { DEFAULT_CATEGORIES, DEFAULT_SUBCATEGORIES, SAMPLE_MERCHANTS, SAMPLE_PRODUCTS, SAMPLE_RECEIPTS } from "../data/defaultCategories";
 
@@ -247,6 +247,82 @@ export function useProducts(onSubcategoryCleanup?: (usedIds: Set<string>) => voi
     return products.find((p) => p.barcode === barcode);
   }, [products]);
 
+  // Update price history for a product from a receipt item
+  const updatePriceFromReceipt = useCallback((
+    productId: string, 
+    price: number, 
+    merchantId: string, 
+    date: string,
+    excludeFromHistory?: boolean
+  ) => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id !== productId) return p;
+        if (p.excludeFromPriceHistory || excludeFromHistory) return p;
+        
+        const newEntry: PriceHistoryEntry = { date, price, merchantId };
+        const existingHistory = p.priceHistory || [];
+        
+        // Check if we already have an entry for this date and merchant
+        const existingIndex = existingHistory.findIndex(
+          (h) => h.date === date && h.merchantId === merchantId
+        );
+        
+        let updatedHistory: PriceHistoryEntry[];
+        if (existingIndex >= 0) {
+          // Update existing entry
+          updatedHistory = [...existingHistory];
+          updatedHistory[existingIndex] = newEntry;
+        } else {
+          // Add new entry
+          updatedHistory = [...existingHistory, newEntry];
+        }
+        
+        // Sort by date descending
+        updatedHistory.sort((a, b) => b.date.localeCompare(a.date));
+        
+        // Update default price to the latest
+        const latestPrice = updatedHistory[0]?.price ?? p.defaultPrice;
+        
+        return { ...p, priceHistory: updatedHistory, defaultPrice: latestPrice };
+      })
+    );
+  }, []);
+
+  // Batch update prices from a receipt
+  const updatePricesFromReceipt = useCallback((
+    items: ReceiptItem[], 
+    merchantId: string, 
+    date: string
+  ) => {
+    items.forEach((item) => {
+      if (item.productId && item.productId !== "__placeholder__") {
+        updatePriceFromReceipt(
+          item.productId, 
+          item.unitPrice, 
+          merchantId, 
+          date,
+          item.excludeFromPriceHistory
+        );
+      }
+    });
+  }, [updatePriceFromReceipt]);
+
+  // Get latest price per merchant for a product
+  const getPricesByMerchant = useCallback((productId: string): Map<string, PriceHistoryEntry> => {
+    const product = products.find((p) => p.id === productId);
+    if (!product?.priceHistory) return new Map();
+    
+    const priceMap = new Map<string, PriceHistoryEntry>();
+    // priceHistory is sorted by date desc, so first occurrence per merchant is latest
+    for (const entry of product.priceHistory) {
+      if (!priceMap.has(entry.merchantId)) {
+        priceMap.set(entry.merchantId, entry);
+      }
+    }
+    return priceMap;
+  }, [products]);
+
   return { 
     products, 
     addProduct, 
@@ -255,7 +331,10 @@ export function useProducts(onSubcategoryCleanup?: (usedIds: Set<string>) => voi
     findProductByName, 
     searchProducts,
     getOrCreateProduct,
-    findProductByBarcode
+    findProductByBarcode,
+    updatePriceFromReceipt,
+    updatePricesFromReceipt,
+    getPricesByMerchant
   };
 }
 
