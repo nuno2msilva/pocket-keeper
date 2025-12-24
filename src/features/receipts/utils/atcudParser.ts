@@ -2,37 +2,27 @@ import { ATCUDData } from "@/features/shared";
 
 /**
  * Parse Portuguese ATCUD QR codes from receipts
- * ATCUD format: A:NIF*B:NIF_CLIENTE*C:PAIS*D:TIPO*E:STATUS*F:DATA*G:IDENTIFICACAO*H:ATCUD*I1:*I2:*...N:TOTAL*O:IMPOSTOS*Q:HASH*R:CERT
+ * 
+ * ATCUD QR Format fields:
+ * A: NIF do emitente (Merchant NIF)
+ * B: NIF do adquirente (Customer NIF)
+ * C: País (Country, e.g., PT)
+ * D: Tipo de documento (Document type, e.g., FT = Fatura)
+ * E: Estado do documento (Status)
+ * F: Data de emissão (Issue date YYYYMMDD)
+ * G: Identificação única do documento (Document ID / Receipt number)
+ * H: ATCUD (Unique document code - NOT time!)
+ * I1-I8: Tax breakdown fields
+ * N: Base tributável / Tax base amount (NOT the receipt total!)
+ * O: Total do documento (Document total including tax)
+ * Q: 4 caracteres do Hash
+ * R: Número do certificado
+ * 
+ * NOTE: Time is NOT included in ATCUD QR codes. It's printed on receipts
+ * but not encoded in the QR. Users must enter time manually.
  */
 export function parseATCUDQRCode(qrData: string): ATCUDData {
   const result: ATCUDData = {};
-
-  const normalizeTime = (raw: string): string | undefined => {
-    const value = raw.trim();
-
-    // HH:MM or HH:MM:SS
-    const colonMatch = value.match(/\b([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?\b/);
-    if (colonMatch) return `${colonMatch[1]}:${colonMatch[2]}`;
-
-    // HH.MM or HHhMM
-    const dotMatch = value.match(/\b([01]\d|2[0-3])[\.h]([0-5]\d)\b/i);
-    if (dotMatch) return `${dotMatch[1]}:${dotMatch[2]}`;
-
-    // Compact HHMM or HHMMSS (digits only)
-    if (/^\d{4}$/.test(value) || /^\d{6}$/.test(value)) {
-      const hours = value.slice(0, 2);
-      const minutes = value.slice(2, 4);
-      if (/^(?:[01]\d|2[0-3])$/.test(hours) && /^(?:[0-5]\d)$/.test(minutes)) {
-        return `${hours}:${minutes}`;
-      }
-    }
-
-    // DateTime formats like ...T1345 or ...T134500
-    const tMatch = value.match(/T([01]\d|2[0-3])([0-5]\d)([0-5]\d)?/);
-    if (tMatch) return `${tMatch[1]}:${tMatch[2]}`;
-
-    return undefined;
-  };
 
   try {
     const parts = qrData.split("*");
@@ -49,7 +39,7 @@ export function parseATCUDQRCode(qrData: string): ATCUDData {
         case "A": // Merchant NIF
           result.nif = value;
           break;
-        case "B": // Customer NIF
+        case "B": // Customer NIF (999999990 = consumidor final / no NIF)
           if (value && value !== "999999990") {
             result.customerNif = value;
           }
@@ -59,37 +49,26 @@ export function parseATCUDQRCode(qrData: string): ATCUDData {
             result.date = `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
           }
           break;
-        case "G": // Receipt identification
+        case "G": // Receipt identification (e.g., "FT 0090032025110001/001107")
           result.receiptNumber = value;
-          // Some issuers embed time in identification; try extracting it.
-          if (!result.time) {
-            const maybeTime = normalizeTime(value);
-            if (maybeTime) result.time = maybeTime;
-          }
           break;
-        case "N": // Total
+        // H is ATCUD code (e.g., "J6F32MXV-001107"), NOT time!
+        case "O": // Total do documento (document total WITH tax - this is the real total)
           result.total = parseFloat(value);
           break;
-        default: {
-          // Time isn't consistently keyed across issuers. If we haven't found it yet,
-          // try to interpret any field value as a time.
-          if (!result.time) {
-            const maybeTime = normalizeTime(value);
-            if (maybeTime) result.time = maybeTime;
+        case "N": // Tax base - only use if O wasn't found (fallback for older formats)
+          if (result.total === undefined) {
+            result.total = parseFloat(value);
           }
           break;
-        }
       }
-    }
-
-    // Last-resort: extract time from the whole QR payload.
-    if (!result.time) {
-      const match = qrData.match(/\b([01]\d|2[0-3]):([0-5]\d)\b/);
-      if (match) result.time = `${match[1]}:${match[2]}`;
     }
   } catch (error) {
     console.error("Error parsing ATCUD QR code:", error);
   }
+
+  // Note: Time is NOT available in ATCUD QR codes
+  // result.time remains undefined - user must enter manually
 
   return result;
 }
