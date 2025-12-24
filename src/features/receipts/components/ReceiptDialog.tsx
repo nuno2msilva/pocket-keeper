@@ -1,3 +1,14 @@
+/**
+ * ReceiptDialog Component
+ * 
+ * A dialog/modal for creating or editing receipts.
+ * Features:
+ * - QR code scanning for Portuguese receipts (mobile only)
+ * - Barcode scanning for products (mobile only)
+ * - Auto-complete for stores and products
+ * - Line item management
+ */
+
 import { useState, useRef } from "react";
 import { Plus, Trash2, Camera, ChevronDown, Barcode } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -12,6 +23,7 @@ import { QRScanner } from "./QRScanner";
 import { BarcodeScanner } from "./BarcodeScanner";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useDeviceType } from "@/hooks/useDeviceType";
 
 interface ReceiptDialogProps {
   open: boolean;
@@ -148,6 +160,10 @@ export function ReceiptDialog({
   onSearchMerchants,
   onFindProductByBarcode,
 }: ReceiptDialogProps) {
+  // Check device type to enable/disable scanner features
+  const { canUseScanners } = useDeviceType();
+  
+  // Form state
   const [merchantName, setMerchantName] = useState("");
   const [merchantId, setMerchantId] = useState("");
   const [date, setDate] = useState("");
@@ -158,8 +174,12 @@ export function ReceiptDialog({
   const [items, setItems] = useState<(ReceiptItem & { inputName: string })[]>([]);
   const [total, setTotal] = useState("");
   const [notes, setNotes] = useState("");
+  
+  // Scanner visibility (only used on mobile)
   const [showScanner, setShowScanner] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  
+  // UI state
   const [showNifDetails, setShowNifDetails] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -366,15 +386,18 @@ export function ReceiptDialog({
         </DialogHeader>
 
         <div className="space-y-5 py-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => setShowScanner(true)}
-          >
-            <Camera className="w-5 h-5 mr-2" aria-hidden="true" />
-            Scan Receipt QR Code
-          </Button>
+          {/* QR Scanner button - only visible on mobile devices */}
+          {canUseScanners && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowScanner(true)}
+            >
+              <Camera className="w-5 h-5 mr-2" aria-hidden="true" />
+              Scan Receipt QR Code
+            </Button>
+          )}
 
           {/* Store */}
           <div className="space-y-2">
@@ -478,15 +501,18 @@ export function ReceiptDialog({
             <div className="flex items-center justify-between">
               <Label>Items</Label>
               <div className="flex gap-1">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowBarcodeScanner(true)}
-                  aria-label="Scan barcode"
-                >
-                  <Barcode className="w-4 h-4" />
-                </Button>
+                {/* Barcode scanner button - only visible on mobile devices */}
+                {canUseScanners && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowBarcodeScanner(true)}
+                    aria-label="Scan barcode"
+                  >
+                    <Barcode className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button type="button" variant="ghost" size="sm" onClick={addItem}>
                   <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
                   Add
