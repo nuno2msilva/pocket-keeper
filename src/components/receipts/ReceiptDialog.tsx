@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, Camera, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Receipt, ReceiptItem, Merchant, Product, ATCUDData } from "@/types/expense";
 import { QRScanner } from "@/components/scanner/QRScanner";
+import { cn } from "@/lib/utils";
 
 interface ReceiptDialogProps {
   open: boolean;
@@ -19,6 +20,105 @@ interface ReceiptDialogProps {
   products: Product[];
   onSave: (receipt: Omit<Receipt, "id">) => void;
   onFindMerchantByNif?: (nif: string) => Merchant | undefined;
+  onGetOrCreateProduct?: (name: string) => Product;
+}
+
+// Simple fuzzy search
+function fuzzyMatch(query: string, text: string): boolean {
+  const lowerQuery = query.toLowerCase();
+  const lowerText = text.toLowerCase();
+  
+  if (lowerText.includes(lowerQuery)) return true;
+  
+  let queryIdx = 0;
+  for (const char of lowerText) {
+    if (char === lowerQuery[queryIdx]) {
+      queryIdx++;
+      if (queryIdx === lowerQuery.length) return true;
+    }
+  }
+  return false;
+}
+
+interface ProductInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSelect: (product: Product) => void;
+  products: Product[];
+  placeholder?: string;
+}
+
+function ProductInput({ value, onChange, onSelect, products, placeholder }: ProductInputProps) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const suggestions = value.trim()
+    ? products.filter(p => fuzzyMatch(value, p.name)).slice(0, 6)
+    : [];
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setFocusedIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setFocusedIndex(prev => Math.max(prev - 1, 0));
+    } else if (e.key === "Enter" && focusedIndex >= 0) {
+      e.preventDefault();
+      onSelect(suggestions[focusedIndex]);
+      setShowSuggestions(false);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setShowSuggestions(true);
+          setFocusedIndex(-1);
+        }}
+        onFocus={() => setShowSuggestions(true)}
+        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+      />
+      {showSuggestions && suggestions.length > 0 && (
+        <div 
+          ref={listRef}
+          className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+        >
+          {suggestions.map((product, index) => (
+            <button
+              key={product.id}
+              type="button"
+              className={cn(
+                "w-full px-3 py-2 text-left text-sm hover:bg-secondary transition-colors",
+                focusedIndex === index && "bg-secondary"
+              )}
+              onMouseDown={() => onSelect(product)}
+            >
+              <span className="font-medium">{product.name}</span>
+              {product.defaultPrice && (
+                <span className="text-muted-foreground ml-2">€{product.defaultPrice.toFixed(2)}</span>
+              )}
+              {!product.isSolidified && (
+                <span className="ml-2 text-xs bg-warning/20 text-warning px-1.5 py-0.5 rounded">new</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ReceiptDialog({
@@ -29,6 +129,7 @@ export function ReceiptDialog({
   products,
   onSave,
   onFindMerchantByNif,
+  onGetOrCreateProduct,
 }: ReceiptDialogProps) {
   const [merchantId, setMerchantId] = useState("");
   const [date, setDate] = useState("");
@@ -36,7 +137,7 @@ export function ReceiptDialog({
   const [receiptNumber, setReceiptNumber] = useState("");
   const [hasCustomerNif, setHasCustomerNif] = useState(false);
   const [customerNif, setCustomerNif] = useState("");
-  const [items, setItems] = useState<ReceiptItem[]>([]);
+  const [items, setItems] = useState<(ReceiptItem & { inputName: string })[]>([]);
   const [total, setTotal] = useState("");
   const [notes, setNotes] = useState("");
   const [showScanner, setShowScanner] = useState(false);
@@ -50,7 +151,7 @@ export function ReceiptDialog({
       setReceiptNumber(receipt.receiptNumber || "");
       setHasCustomerNif(receipt.hasCustomerNif);
       setCustomerNif(receipt.customerNif || "");
-      setItems(receipt.items);
+      setItems(receipt.items.map(item => ({ ...item, inputName: item.productName })));
       setTotal(receipt.total.toString());
       setNotes(receipt.notes || "");
     } else {
@@ -83,7 +184,6 @@ export function ReceiptDialog({
       setCustomerNif(data.customerNif);
     }
     
-    // Try to find merchant by NIF
     if (data.nif && onFindMerchantByNif) {
       const foundMerchant = onFindMerchantByNif(data.nif);
       if (foundMerchant) {
@@ -93,22 +193,22 @@ export function ReceiptDialog({
   };
 
   const addItem = () => {
-    if (products.length === 0) return;
-    const newItem: ReceiptItem = {
+    const newItem: ReceiptItem & { inputName: string } = {
       id: `item-${Date.now()}`,
-      productId: products[0].id,
+      productId: "",
+      productName: "",
+      inputName: "",
       quantity: 1,
-      unitPrice: products[0].defaultPrice || 0,
-      total: products[0].defaultPrice || 0,
+      unitPrice: 0,
+      total: 0,
     };
     setItems([...items, newItem]);
   };
 
-  const updateItem = (index: number, updates: Partial<ReceiptItem>) => {
+  const updateItem = (index: number, updates: Partial<ReceiptItem & { inputName: string }>) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], ...updates };
     
-    // Recalculate total if quantity or unit price changed
     if ("quantity" in updates || "unitPrice" in updates) {
       newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
     }
@@ -116,23 +216,46 @@ export function ReceiptDialog({
     setItems(newItems);
   };
 
-  const removeItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index));
+  const handleProductSelect = (index: number, product: Product) => {
+    updateItem(index, {
+      productId: product.id,
+      productName: product.name,
+      inputName: product.name,
+      unitPrice: product.defaultPrice || items[index].unitPrice,
+      total: (product.defaultPrice || items[index].unitPrice) * items[index].quantity,
+    });
   };
 
-  const handleProductChange = (index: number, productId: string) => {
-    const product = products.find((p) => p.id === productId);
-    updateItem(index, {
-      productId,
-      unitPrice: product?.defaultPrice || items[index].unitPrice,
-      total: (product?.defaultPrice || items[index].unitPrice) * items[index].quantity,
-    });
+  const removeItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
   };
 
   const handleSave = () => {
     if (!merchantId || !date) return;
     
-    const calculatedTotal = items.reduce((sum, item) => sum + item.total, 0);
+    // Process items - create products if needed
+    const processedItems: ReceiptItem[] = items.map(item => {
+      let productId = item.productId;
+      let productName = item.productName || item.inputName;
+      
+      // If no product selected but name typed, create/get product
+      if (!productId && item.inputName.trim() && onGetOrCreateProduct) {
+        const product = onGetOrCreateProduct(item.inputName.trim());
+        productId = product.id;
+        productName = product.name;
+      }
+      
+      return {
+        id: item.id,
+        productId,
+        productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        total: item.total,
+      };
+    }).filter(item => item.productName.trim()); // Remove empty items
+    
+    const calculatedTotal = processedItems.reduce((sum, item) => sum + item.total, 0);
     
     onSave({
       merchantId,
@@ -141,7 +264,7 @@ export function ReceiptDialog({
       receiptNumber: receiptNumber || undefined,
       hasCustomerNif,
       customerNif: hasCustomerNif ? customerNif : undefined,
-      items,
+      items: processedItems,
       total: parseFloat(total) || calculatedTotal,
       notes: notes || undefined,
     });
@@ -257,7 +380,6 @@ export function ReceiptDialog({
                 variant="ghost"
                 size="sm"
                 onClick={addItem}
-                disabled={products.length === 0}
               >
                 <Plus className="w-4 h-4 mr-1" />
                 Add Item
@@ -276,21 +398,15 @@ export function ReceiptDialog({
                     className="p-3 bg-secondary rounded-lg space-y-2"
                   >
                     <div className="flex items-center gap-2">
-                      <Select
-                        value={item.productId}
-                        onValueChange={(v) => handleProductChange(index, v)}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex-1">
+                        <ProductInput
+                          value={item.inputName}
+                          onChange={(value) => updateItem(index, { inputName: value, productName: value })}
+                          onSelect={(product) => handleProductSelect(index, product)}
+                          products={products}
+                          placeholder="Type product name..."
+                        />
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"

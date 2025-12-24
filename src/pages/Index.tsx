@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ReceiptDialog } from "@/components/receipts/ReceiptDialog";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
-import { useReceipts, useMerchants, useCategories, useProducts } from "@/hooks/useLocalStorage";
+import { useReceipts, useMerchants, useProducts } from "@/hooks/useLocalStorage";
 import { Receipt } from "@/types/expense";
 import { toast } from "sonner";
 import {
@@ -19,8 +19,7 @@ import {
 const Index = () => {
   const { receipts, addReceipt, updateReceipt, deleteReceipt } = useReceipts();
   const { merchants, findMerchantByNif } = useMerchants();
-  const { categories } = useCategories();
-  const { products } = useProducts();
+  const { products, getOrCreateProduct } = useProducts();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -29,14 +28,6 @@ const Index = () => {
 
   const getMerchant = (merchantId: string) => 
     merchants.find(m => m.id === merchantId);
-  
-  const getCategory = (merchantId: string) => {
-    const merchant = getMerchant(merchantId);
-    return categories.find(c => c.id === merchant?.categoryId);
-  };
-
-  const getProduct = (productId: string) =>
-    products.find(p => p.id === productId);
 
   // Calculate this month's total
   const currentMonth = new Date().getMonth();
@@ -121,21 +112,17 @@ const Index = () => {
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
             .map(receipt => {
               const merchant = getMerchant(receipt.merchantId);
-              const category = getCategory(receipt.merchantId);
               
               return (
                 <div
                   key={receipt.id}
                   className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all duration-200 animate-fade-in"
                 >
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0"
-                    style={{ backgroundColor: category?.color ? `${category.color}20` : 'hsl(var(--secondary))' }}
-                  >
-                    {category?.icon || "🧾"}
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 bg-secondary">
+                    🧾
                   </div>
                   
-                  <div className="flex-1 min-w-0" onClick={() => handleView(receipt)}>
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleView(receipt)}>
                     <h3 className="text-body font-semibold text-foreground truncate">
                       {merchant?.name || "Unknown Merchant"}
                     </h3>
@@ -193,6 +180,7 @@ const Index = () => {
         products={products}
         onSave={handleSave}
         onFindMerchantByNif={findMerchantByNif}
+        onGetOrCreateProduct={getOrCreateProduct}
       />
 
       <DeleteConfirmDialog
@@ -213,7 +201,7 @@ const Index = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-title font-semibold">
+                  <h3 className="text-subheading font-semibold">
                     {getMerchant(selectedReceipt.merchantId)?.name}
                   </h3>
                   <p className="text-caption text-muted-foreground">
@@ -258,20 +246,17 @@ const Index = () => {
                 <div className="space-y-2">
                   <h4 className="text-body font-semibold">Items</h4>
                   <div className="space-y-2">
-                    {selectedReceipt.items.map(item => {
-                      const product = getProduct(item.productId);
-                      return (
-                        <div key={item.id} className="flex justify-between p-2 bg-secondary/50 rounded">
-                          <div>
-                            <span className="text-body">{product?.name || "Unknown"}</span>
-                            <span className="text-caption text-muted-foreground ml-2">
-                              x{item.quantity} @ €{item.unitPrice.toFixed(2)}
-                            </span>
-                          </div>
-                          <span className="text-body font-medium">€{item.total.toFixed(2)}</span>
+                    {selectedReceipt.items.map(item => (
+                      <div key={item.id} className="flex justify-between p-2 bg-secondary/50 rounded">
+                        <div>
+                          <span className="text-body">{item.productName}</span>
+                          <span className="text-caption text-muted-foreground ml-2">
+                            x{item.quantity} @ €{item.unitPrice.toFixed(2)}
+                          </span>
                         </div>
-                      );
-                    })}
+                        <span className="text-body font-medium">€{item.total.toFixed(2)}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

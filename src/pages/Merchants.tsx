@@ -6,21 +6,17 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { MerchantDialog } from "@/components/merchants/MerchantDialog";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
-import { useMerchants, useCategories, useReceipts } from "@/hooks/useLocalStorage";
+import { useMerchants, useReceipts } from "@/hooks/useLocalStorage";
 import { Merchant } from "@/types/expense";
 import { toast } from "sonner";
 
 export default function Merchants() {
   const { merchants, addMerchant, updateMerchant, deleteMerchant } = useMerchants();
-  const { categories } = useCategories();
   const { receipts } = useReceipts();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
-
-  const getCategory = (categoryId: string) => 
-    categories.find(c => c.id === categoryId);
 
   const getReceiptCount = (merchantId: string) =>
     receipts.filter(r => r.merchantId === merchantId).length;
@@ -86,7 +82,6 @@ export default function Merchants() {
           />
         ) : (
           merchants.map(merchant => {
-            const category = getCategory(merchant.categoryId);
             const receiptCount = getReceiptCount(merchant.id);
             const totalSpent = getTotalSpent(merchant.id);
             
@@ -95,11 +90,8 @@ export default function Merchants() {
                 key={merchant.id}
                 className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all duration-200 animate-fade-in"
               >
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0"
-                  style={{ backgroundColor: category?.color ? `${category.color}20` : 'hsl(var(--secondary))' }}
-                >
-                  {category?.icon || "🏪"}
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 bg-secondary">
+                  🏪
                 </div>
                 
                 <div className="flex-1 min-w-0">
@@ -107,7 +99,7 @@ export default function Merchants() {
                     {merchant.name}
                   </h3>
                   <p className="text-caption text-muted-foreground">
-                    {category?.name || "Uncategorized"} • {receiptCount} receipt{receiptCount !== 1 ? "s" : ""}
+                    {receiptCount} receipt{receiptCount !== 1 ? "s" : ""}
                   </p>
                   {merchant.nif && (
                     <p className="text-[11px] text-muted-foreground">NIF: {merchant.nif}</p>
@@ -147,7 +139,6 @@ export default function Merchants() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         merchant={selectedMerchant}
-        categories={categories}
         onSave={handleSave}
       />
 

@@ -1,29 +1,47 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { sampleCategories, sampleReceipts, sampleMerchants } from "@/data/sampleData";
-import { TrendingUp, TrendingDown, DollarSign, ShoppingBag } from "lucide-react";
+import { useCategories, useReceipts, useMerchants, useProducts } from "@/hooks/useLocalStorage";
+import { DollarSign, ShoppingBag } from "lucide-react";
 
 export default function Insights() {
-  // Calculate category spending
+  const { categories } = useCategories();
+  const { receipts } = useReceipts();
+  const { merchants } = useMerchants();
+  const { products } = useProducts();
+
+  // Calculate category spending based on products in receipts
   const getCategorySpending = () => {
-    return sampleCategories.map(category => {
-      const categoryMerchants = sampleMerchants.filter(m => m.categoryId === category.id);
-      const merchantIds = categoryMerchants.map(m => m.id);
-      const total = sampleReceipts
-        .filter(r => merchantIds.includes(r.merchantId))
-        .reduce((sum, r) => sum + r.total, 0);
-      return { ...category, total };
-    }).sort((a, b) => b.total - a.total);
+    const categoryTotals: Record<string, number> = {};
+    
+    // Initialize all categories
+    categories.forEach(cat => {
+      categoryTotals[cat.id] = 0;
+    });
+    
+    // Calculate from receipt items
+    receipts.forEach(receipt => {
+      receipt.items.forEach(item => {
+        const product = products.find(p => p.id === item.productId);
+        if (product?.categoryId) {
+          categoryTotals[product.categoryId] = (categoryTotals[product.categoryId] || 0) + item.total;
+        }
+      });
+    });
+    
+    return categories.map(cat => ({
+      ...cat,
+      total: categoryTotals[cat.id] || 0
+    })).sort((a, b) => b.total - a.total);
   };
 
   const categorySpending = getCategorySpending();
-  const totalSpent = categorySpending.reduce((sum, c) => sum + c.total, 0);
+  const totalSpent = receipts.reduce((sum, r) => sum + r.total, 0);
   const topCategory = categorySpending[0];
 
   // Calculate this month stats
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
-  const thisMonthReceipts = sampleReceipts.filter(r => {
+  const thisMonthReceipts = receipts.filter(r => {
     const date = new Date(r.date);
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
   });
@@ -49,7 +67,7 @@ export default function Insights() {
               </div>
             </div>
             <p className="text-caption text-muted-foreground">This Month</p>
-            <p className="text-heading text-foreground">${thisMonthTotal.toFixed(2)}</p>
+            <p className="text-heading text-foreground">€{thisMonthTotal.toFixed(2)}</p>
           </div>
 
           <div className="bg-card rounded-lg border border-border p-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
@@ -59,7 +77,7 @@ export default function Insights() {
               </div>
             </div>
             <p className="text-caption text-muted-foreground">Avg. Receipt</p>
-            <p className="text-heading text-foreground">${averagePerReceipt.toFixed(2)}</p>
+            <p className="text-heading text-foreground">€{averagePerReceipt.toFixed(2)}</p>
           </div>
         </div>
 
@@ -77,11 +95,11 @@ export default function Insights() {
               <div className="flex-1">
                 <p className="text-body font-semibold text-foreground">{topCategory.name}</p>
                 <p className="text-caption text-muted-foreground">
-                  {((topCategory.total / totalSpent) * 100).toFixed(0)}% of total spending
+                  {totalSpent > 0 ? ((topCategory.total / totalSpent) * 100).toFixed(0) : 0}% of total spending
                 </p>
               </div>
               <p className="text-body-lg font-semibold text-foreground">
-                ${topCategory.total.toFixed(2)}
+                €{topCategory.total.toFixed(2)}
               </p>
             </div>
           </div>
@@ -102,7 +120,7 @@ export default function Insights() {
                       <span className="text-body text-foreground">{category.name}</span>
                     </div>
                     <span className="text-body font-medium text-foreground">
-                      ${category.total.toFixed(2)}
+                      €{category.total.toFixed(2)}
                     </span>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -127,15 +145,15 @@ export default function Insights() {
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2">
               <span className="text-body text-muted-foreground">Total Receipts</span>
-              <span className="text-body font-semibold text-foreground">{sampleReceipts.length}</span>
+              <span className="text-body font-semibold text-foreground">{receipts.length}</span>
             </div>
             <div className="flex items-center justify-between py-2 border-t border-border">
               <span className="text-body text-muted-foreground">Total Merchants</span>
-              <span className="text-body font-semibold text-foreground">{sampleMerchants.length}</span>
+              <span className="text-body font-semibold text-foreground">{merchants.length}</span>
             </div>
             <div className="flex items-center justify-between py-2 border-t border-border">
               <span className="text-body text-muted-foreground">All-time Spending</span>
-              <span className="text-body font-semibold text-foreground">${totalSpent.toFixed(2)}</span>
+              <span className="text-body font-semibold text-foreground">€{totalSpent.toFixed(2)}</span>
             </div>
           </div>
         </div>

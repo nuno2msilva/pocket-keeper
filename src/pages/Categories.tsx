@@ -1,30 +1,28 @@
 import { useState } from "react";
-import { Plus, Grid3X3, Pencil, Trash2 } from "lucide-react";
+import { Plus, Grid3X3, Pencil, Trash2, ChevronRight } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { CategoryDialog } from "@/components/categories/CategoryDialog";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
-import { useCategories, useReceipts, useMerchants } from "@/hooks/useLocalStorage";
+import { useCategories, useSubcategories, useProducts } from "@/hooks/useLocalStorage";
 import { Category } from "@/types/expense";
 import { toast } from "sonner";
 
 export default function Categories() {
   const { categories, addCategory, updateCategory, deleteCategory } = useCategories();
-  const { merchants } = useMerchants();
-  const { receipts } = useReceipts();
+  const { subcategories, getSubcategoriesByCategory } = useSubcategories();
+  const { products } = useProducts();
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   const getCategoryStats = (categoryId: string) => {
-    const categoryMerchants = merchants.filter(m => m.categoryId === categoryId);
-    const merchantIds = categoryMerchants.map(m => m.id);
-    const categoryReceipts = receipts.filter(r => merchantIds.includes(r.merchantId));
-    const totalSpent = categoryReceipts.reduce((sum, r) => sum + r.total, 0);
-    return { count: categoryReceipts.length, total: totalSpent };
+    const categoryProducts = products.filter(p => p.categoryId === categoryId);
+    const subcats = getSubcategoriesByCategory(categoryId);
+    return { productCount: categoryProducts.length, subcategoryCount: subcats.length };
   };
 
   const handleAdd = () => {
@@ -120,11 +118,14 @@ export default function Categories() {
                     {category.name}
                   </h3>
                   <p className="text-caption text-muted-foreground">
-                    €{stats.total.toFixed(2)}
+                    {stats.productCount} product{stats.productCount !== 1 ? "s" : ""}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {stats.count} receipt{stats.count !== 1 ? "s" : ""}
-                  </p>
+                  {stats.subcategoryCount > 0 && (
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      {stats.subcategoryCount} subcategory{stats.subcategoryCount !== 1 ? "s" : ""}
+                      <ChevronRight className="w-3 h-3" />
+                    </p>
+                  )}
                 </div>
               );
             })}
@@ -143,7 +144,7 @@ export default function Categories() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         title="Delete Category"
-        description={`Are you sure you want to delete "${selectedCategory?.name}"? This won't delete associated merchants or products.`}
+        description={`Are you sure you want to delete "${selectedCategory?.name}"? This won't delete associated products.`}
         onConfirm={confirmDelete}
       />
     </AppLayout>

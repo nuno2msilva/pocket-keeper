@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { Category, Merchant, Product, Receipt } from "@/types/expense";
-import { sampleCategories, sampleMerchants, sampleProducts, sampleReceipts } from "@/data/sampleData";
+import { Category, Subcategory, Merchant, Product, Receipt } from "@/types/expense";
+import { sampleCategories, sampleMerchants, sampleProducts, sampleReceipts, sampleSubcategories } from "@/data/sampleData";
 
 const STORAGE_KEYS = {
   categories: "expense-tracker-categories",
+  subcategories: "expense-tracker-subcategories",
   merchants: "expense-tracker-merchants",
   products: "expense-tracker-products",
   receipts: "expense-tracker-receipts",
@@ -48,6 +49,38 @@ export function useCategories() {
   }, []);
 
   return { categories, addCategory, updateCategory, deleteCategory };
+}
+
+export function useSubcategories() {
+  const [subcategories, setSubcategories] = useState<Subcategory[]>(() =>
+    getStoredData(STORAGE_KEYS.subcategories, sampleSubcategories)
+  );
+
+  useEffect(() => {
+    setStoredData(STORAGE_KEYS.subcategories, subcategories);
+  }, [subcategories]);
+
+  const addSubcategory = useCallback((subcategory: Omit<Subcategory, "id">) => {
+    const newSubcategory = { ...subcategory, id: `subcat-${Date.now()}` };
+    setSubcategories((prev) => [...prev, newSubcategory]);
+    return newSubcategory;
+  }, []);
+
+  const updateSubcategory = useCallback((id: string, updates: Partial<Subcategory>) => {
+    setSubcategories((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+    );
+  }, []);
+
+  const deleteSubcategory = useCallback((id: string) => {
+    setSubcategories((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const getSubcategoriesByCategory = useCallback((categoryId: string) => {
+    return subcategories.filter((s) => s.parentCategoryId === categoryId);
+  }, [subcategories]);
+
+  return { subcategories, addSubcategory, updateSubcategory, deleteSubcategory, getSubcategoriesByCategory };
 }
 
 export function useMerchants() {
@@ -107,7 +140,58 @@ export function useProducts() {
     setProducts((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
-  return { products, addProduct, updateProduct, deleteProduct };
+  const findProductByName = useCallback((name: string) => {
+    const lowerName = name.toLowerCase().trim();
+    return products.find((p) => p.name.toLowerCase() === lowerName);
+  }, [products]);
+
+  // Fuzzy search for product suggestions
+  const searchProducts = useCallback((query: string): Product[] => {
+    if (!query.trim()) return [];
+    const lowerQuery = query.toLowerCase().trim();
+    
+    return products
+      .filter((p) => {
+        const lowerName = p.name.toLowerCase();
+        // Check if contains the query or if characters match in order (fuzzy)
+        if (lowerName.includes(lowerQuery)) return true;
+        
+        // Simple fuzzy: check if all query chars exist in order
+        let queryIdx = 0;
+        for (const char of lowerName) {
+          if (char === lowerQuery[queryIdx]) {
+            queryIdx++;
+            if (queryIdx === lowerQuery.length) return true;
+          }
+        }
+        return false;
+      })
+      .slice(0, 8); // Limit to 8 suggestions
+  }, [products]);
+
+  // Auto-create product when used in receipt (not solidified)
+  const getOrCreateProduct = useCallback((name: string): Product => {
+    const existing = findProductByName(name);
+    if (existing) return existing;
+    
+    const newProduct: Product = {
+      id: `prod-${Date.now()}`,
+      name: name.trim(),
+      isSolidified: false,
+    };
+    setProducts((prev) => [...prev, newProduct]);
+    return newProduct;
+  }, [findProductByName]);
+
+  return { 
+    products, 
+    addProduct, 
+    updateProduct, 
+    deleteProduct, 
+    findProductByName, 
+    searchProducts,
+    getOrCreateProduct 
+  };
 }
 
 export function useReceipts() {
