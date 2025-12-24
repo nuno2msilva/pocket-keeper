@@ -1,73 +1,434 @@
-# Welcome to your Lovable project
+# 🧾 Pocket Keeper - Personal Expense Tracker
 
-## Project info
+A mobile-first personal expense tracking application built with React, TypeScript, and Tailwind CSS. Track your receipts, manage merchants and products, and gain insights into your spending habits with beautiful visualizations.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+![React](https://img.shields.io/badge/React-18.3-blue?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwind-css)
+![Capacitor](https://img.shields.io/badge/Capacitor-8.0-119EFF?logo=capacitor)
+![PWA](https://img.shields.io/badge/PWA-Enabled-5A0FC8?logo=pwa)
 
-## How can I edit this code?
+## 📱 Screenshots
 
-There are several ways of editing your application.
+The app features a clean, modern interface optimized for mobile devices with:
+- Dashboard with spending insights and charts
+- Receipt management with QR code scanning
+- Product catalog with price tracking
+- Category-based spending breakdowns
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## ✨ Features
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📊 Dashboard & Insights
+- **Monthly Overview**: Navigate between months to see spending totals and trends
+- **Month-over-Month Comparison**: Visual indicators showing spending changes vs previous month
+- **Category Pie Chart**: Interactive donut chart showing spending distribution
+- **Spending Trends**: Line chart displaying 6-month spending history
+- **Category Trends**: Stacked bar chart showing category spending over time
+- **Category Breakdown**: Detailed view with subcategory spending and progress bars
 
-**Use your preferred IDE**
+### 🧾 Receipt Management
+- **Add Receipts Manually**: Create detailed receipts with merchant, date, time, and items
+- **QR Code Scanning**: Scan Portuguese ATCUD QR codes to auto-fill receipt data (NIF, date, time, total)
+- **Itemized Tracking**: Add multiple products per receipt with quantities and prices
+- **Receipt Details**: View complete receipt information with edit/delete capabilities
+- **Search & Filter**: Find receipts by merchant, date, or amount
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🏪 Merchant Management
+- **Merchant Catalog**: Maintain a list of stores where you shop
+- **NIF Tracking**: Store Portuguese tax numbers for each merchant
+- **Merchant Details**: View all receipts and spending history per merchant
+- **Auto-Creation**: Merchants are automatically created when adding new receipts
+- **Smart Matching**: Find merchants by NIF or name to avoid duplicates
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 📦 Product Management
+- **Product Catalog**: Track all products you purchase
+- **Category Assignment**: Organize products into categories and subcategories
+- **Price History**: Track price changes across different merchants over time
+- **Weighted Products**: Support for products sold by weight (per kg pricing)
+- **Best Price Finder**: See which merchant has the lowest price for each product
+- **Barcode Support**: Associate barcodes with products for future scanning
 
-Follow these steps:
+### 🏷️ Category System
+- **Default Categories**: Pre-configured categories (Food, Transport, Entertainment, etc.)
+- **Custom Categories**: Add, edit, and delete your own categories
+- **Subcategories**: Create subcategories for finer organization
+- **Color Coding**: Each category has a unique color for charts and UI
+- **Icon Support**: Emoji icons for quick visual identification
+- **Category Details**: View all products and spending within a category
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### ⚙️ Settings & Data Management
+- **Export Data**: Download all data as a JSON backup file
+- **Import Data**: Restore from a previously exported backup
+- **Reset to Demo**: Load sample data for testing
+- **Delete All Data**: Permanently remove all data
+- **Accessibility Options**:
+  - High Contrast Mode
+  - Larger Touch Targets
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 🎨 User Experience
+- **Dark/Light Theme**: System-aware theme with manual toggle option
+- **Mobile-First Design**: Optimized for touch devices with bottom navigation
+- **Swipe Actions**: Swipe left on list items to reveal edit/delete actions
+- **Global Search**: Search across receipts, merchants, and products
+- **Empty States**: Helpful guidance when data is empty
+- **Toast Notifications**: Feedback for user actions
+- **Lazy Loading**: Pages load on-demand for faster initial load
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## 🏗️ Architecture
+
+### Project Structure
+
+```
+src/
+├── App.tsx                    # Main app with routing and providers
+├── main.tsx                   # Entry point
+├── index.css                  # Global styles and design tokens
+│
+├── components/ui/             # Shadcn UI components (buttons, cards, dialogs, etc.)
+│
+├── features/                  # Feature-based modules
+│   ├── dashboard/            
+│   │   └── pages/DashboardPage.tsx
+│   │
+│   ├── receipts/
+│   │   ├── components/
+│   │   │   ├── ReceiptDialog.tsx
+│   │   │   ├── QRScanner.tsx
+│   │   │   └── BarcodeScanner.tsx
+│   │   ├── pages/
+│   │   │   ├── ReceiptsPage.tsx
+│   │   │   └── ReceiptDetail.tsx
+│   │   └── utils/atcudParser.ts
+│   │
+│   ├── merchants/
+│   │   ├── components/MerchantDialog.tsx
+│   │   └── pages/
+│   │       ├── MerchantsPage.tsx
+│   │       └── MerchantDetailPage.tsx
+│   │
+│   ├── products/
+│   │   ├── components/ProductDialog.tsx
+│   │   └── pages/
+│   │       ├── ProductsPage.tsx
+│   │       └── ProductDetailPage.tsx
+│   │
+│   ├── categories/
+│   │   └── pages/
+│   │       ├── CategoriesPage.tsx
+│   │       └── CategoryDetailPage.tsx
+│   │
+│   ├── insights/
+│   │   └── components/
+│   │       ├── SpendingTrendsChart.tsx
+│   │       ├── CategoryPieChart.tsx
+│   │       ├── CategoryTrendsChart.tsx
+│   │       └── CategoryBreakdown.tsx
+│   │
+│   ├── settings/
+│   │   ├── components/CategoryEditor.tsx
+│   │   └── pages/SettingsPage.tsx
+│   │
+│   └── shared/
+│       ├── components/
+│       │   ├── AppLayout.tsx
+│       │   ├── BottomNav.tsx
+│       │   ├── PageHeader.tsx
+│       │   ├── ListCard.tsx
+│       │   ├── ListToolbar.tsx
+│       │   ├── SwipeableItem.tsx
+│       │   ├── EmptyState.tsx
+│       │   ├── GlobalSearch.tsx
+│       │   └── DeleteConfirmDialog.tsx
+│       ├── data/
+│       │   ├── repository.ts
+│       │   ├── defaultCategories.ts
+│       │   └── demoData.ts
+│       ├── hooks/
+│       │   ├── useRepository.ts
+│       │   └── useAccessibility.ts
+│       └── types/index.ts
+│
+├── hooks/
+│   ├── use-mobile.tsx
+│   ├── use-toast.ts
+│   └── useDeviceType.ts
+│
+├── lib/utils.ts               # Utility functions (cn, etc.)
+│
+└── pages/NotFound.tsx         # 404 page
+```
+
+### Data Layer
+
+The app uses a **Repository Pattern** for data management:
+
+- **Storage**: Currently uses `localStorage` for persistence
+- **Abstraction**: Clean interface that can be swapped for API/database
+- **Hooks**: React hooks provide reactive data access
+  - `useReceipts()` - CRUD operations for receipts
+  - `useMerchants()` - Merchant management with search
+  - `useProducts()` - Product catalog with price history
+  - `useCategories()` - Category management
+  - `useSubcategories()` - Subcategory management
+
+### Type System
+
+Core data types defined in `src/features/shared/types/index.ts`:
+
+```typescript
+interface Receipt {
+  id: string;
+  merchantId: string;
+  date: string;           // YYYY-MM-DD
+  time?: string;          // HH:MM
+  receiptNumber?: string;
+  customerNif?: string;
+  hasCustomerNif: boolean;
+  items: ReceiptItem[];
+  total: number;
+  notes?: string;
+}
+
+interface Merchant {
+  id: string;
+  name: string;
+  nif?: string;           // Portuguese tax number
+  address?: string;
+  isSolidified?: boolean;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  categoryId?: string;
+  subcategoryId?: string;
+  defaultPrice?: number;
+  isWeighted?: boolean;
+  excludeFromPriceHistory?: boolean;
+  barcode?: string;
+  priceHistory?: PriceHistoryEntry[];
+}
+
+interface Category {
+  id: string;
+  name: string;
+  icon: string;           // Emoji
+  color: string;          // Hex color
+  isDefault?: boolean;
+}
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js** 18+ (LTS recommended)
+- **npm** or **bun** package manager
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd pocket-keeper
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Build for Production
 
-**Use GitHub Codespaces**
+```bash
+# Create production build
+npm run build
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Preview production build
+npm run preview
+```
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## 📱 Mobile App (Android APK)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The app can be built as a native Android application using Capacitor.
 
-## How can I deploy this project?
+### Prerequisites
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+1. **Java JDK 17+**
+   ```bash
+   sudo apt install openjdk-17-jdk
+   ```
 
-## Can I connect a custom domain to my Lovable project?
+2. **Android SDK & Command Line Tools**
+   ```bash
+   # Download Android command-line tools from:
+   # https://developer.android.com/studio#command-line-tools-only
+   
+   # Extract and set up environment variables
+   export ANDROID_HOME=$HOME/android-sdk
+   export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+   export PATH=$PATH:$ANDROID_HOME/platform-tools
+   
+   # Install required SDK components
+   sdkmanager "platform-tools"
+   sdkmanager "platforms;android-34"
+   sdkmanager "build-tools;34.0.0"
+   
+   # Accept licenses
+   sdkmanager --licenses
+   ```
 
-Yes, you can!
+### Build APK
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```bash
+# Add Android platform (first time only)
+npx cap add android
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+# Build the web app
+npm run build
+
+# Sync web assets to Android
+npx cap sync android
+
+# Build debug APK
+cd android
+./gradlew assembleDebug
+
+# APK location:
+# android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Build Signed Release APK
+
+```bash
+cd android
+
+# Build release APK (requires signing configuration)
+./gradlew assembleRelease
+```
+
+---
+
+## 🌐 Progressive Web App (PWA)
+
+The app is PWA-ready and can be installed on any device:
+
+### Features
+- **Offline Support**: Works without internet after first load
+- **Installable**: Add to home screen on mobile devices
+- **Auto-Update**: Automatically updates when new versions are available
+
+### Installing on Mobile
+1. Open the app in your mobile browser
+2. **iOS**: Tap Share → "Add to Home Screen"
+3. **Android**: Tap menu → "Install app" or "Add to Home Screen"
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| **Framework** | React 18 with TypeScript |
+| **Routing** | React Router v6 |
+| **Styling** | Tailwind CSS + shadcn/ui |
+| **State** | React hooks + localStorage |
+| **Charts** | Recharts |
+| **Forms** | React Hook Form + Zod |
+| **Date Handling** | date-fns |
+| **Icons** | Lucide React |
+| **QR Scanning** | html5-qrcode |
+| **Swipe Gestures** | react-swipeable |
+| **Theme** | next-themes |
+| **PWA** | vite-plugin-pwa |
+| **Mobile** | Capacitor |
+| **Build Tool** | Vite |
+
+---
+
+## 📋 Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
+| `npx cap add android` | Add Android platform |
+| `npx cap sync android` | Sync web assets to Android |
+| `npx cap run android` | Run on Android device/emulator |
+
+---
+
+## 🎨 Design System
+
+The app uses a comprehensive design system defined in:
+- `src/index.css` - CSS variables and design tokens
+- `tailwind.config.ts` - Tailwind configuration
+
+### Color Tokens
+- `--background` / `--foreground` - Main surfaces
+- `--primary` / `--primary-foreground` - Primary actions
+- `--secondary` / `--secondary-foreground` - Secondary surfaces
+- `--muted` / `--muted-foreground` - Subdued elements
+- `--accent` - Highlight color
+- `--destructive` - Error/delete actions
+- `--success` - Success indicators
+
+### Theme Support
+- Light and dark themes with system preference detection
+- Manual toggle available in the app header
+
+---
+
+## 🔮 Future Enhancements
+
+Potential features for future development:
+
+- [ ] **Cloud Sync**: Supabase integration for cross-device sync
+- [ ] **Authentication**: User accounts and data privacy
+- [ ] **Budgeting**: Set monthly budgets per category
+- [ ] **Recurring Expenses**: Track subscriptions and regular payments
+- [ ] **Receipt OCR**: Scan paper receipts and extract data
+- [ ] **Multi-Currency**: Support for multiple currencies
+- [ ] **Reports**: PDF export of spending reports
+- [ ] **Widgets**: Home screen widgets for quick add
+
+---
+
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📧 Support
+
+If you have any questions or issues, please open an issue on GitHub.
+
+---
+
+Built with ❤️ using [Lovable](https://lovable.dev)
