@@ -6,14 +6,45 @@ import { ATCUDData } from "@/features/shared";
  */
 export function parseATCUDQRCode(qrData: string): ATCUDData {
   const result: ATCUDData = {};
-  
+
+  const normalizeTime = (raw: string): string | undefined => {
+    const value = raw.trim();
+
+    // HH:MM or HH:MM:SS
+    const colonMatch = value.match(/\b([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?\b/);
+    if (colonMatch) return `${colonMatch[1]}:${colonMatch[2]}`;
+
+    // HH.MM or HHhMM
+    const dotMatch = value.match(/\b([01]\d|2[0-3])[\.h]([0-5]\d)\b/i);
+    if (dotMatch) return `${dotMatch[1]}:${dotMatch[2]}`;
+
+    // Compact HHMM or HHMMSS (digits only)
+    if (/^\d{4}$/.test(value) || /^\d{6}$/.test(value)) {
+      const hours = value.slice(0, 2);
+      const minutes = value.slice(2, 4);
+      if (/^(?:[01]\d|2[0-3])$/.test(hours) && /^(?:[0-5]\d)$/.test(minutes)) {
+        return `${hours}:${minutes}`;
+      }
+    }
+
+    // DateTime formats like ...T1345 or ...T134500
+    const tMatch = value.match(/T([01]\d|2[0-3])([0-5]\d)([0-5]\d)?/);
+    if (tMatch) return `${tMatch[1]}:${tMatch[2]}`;
+
+    return undefined;
+  };
+
   try {
     const parts = qrData.split("*");
-    
+
     for (const part of parts) {
-      const [key, value] = part.split(":");
+      const colonIndex = part.indexOf(":");
+      if (colonIndex === -1) continue;
+
+      const key = part.slice(0, colonIndex);
+      const value = part.slice(colonIndex + 1);
       if (!key || value === undefined) continue;
-      
+
       switch (key) {
         case "A": // Merchant NIF
           result.nif = value;
@@ -30,24 +61,36 @@ export function parseATCUDQRCode(qrData: string): ATCUDData {
           break;
         case "G": // Receipt identification
           result.receiptNumber = value;
-          break;
-        case "H": // Time (HHMMSS format)
-          if (value.length >= 4) {
-            // Handle both HHMMSS and HHMM formats
-            const hours = value.slice(0, 2);
-            const minutes = value.slice(2, 4);
-            result.time = `${hours}:${minutes}`;
+          // Some issuers embed time in identification; try extracting it.
+          if (!result.time) {
+            const maybeTime = normalizeTime(value);
+            if (maybeTime) result.time = maybeTime;
           }
           break;
         case "N": // Total
           result.total = parseFloat(value);
           break;
+        default: {
+          // Time isn't consistently keyed across issuers. If we haven't found it yet,
+          // try to interpret any field value as a time.
+          if (!result.time) {
+            const maybeTime = normalizeTime(value);
+            if (maybeTime) result.time = maybeTime;
+          }
+          break;
+        }
       }
+    }
+
+    // Last-resort: extract time from the whole QR payload.
+    if (!result.time) {
+      const match = qrData.match(/\b([01]\d|2[0-3]):([0-5]\d)\b/);
+      if (match) result.time = `${match[1]}:${match[2]}`;
     }
   } catch (error) {
     console.error("Error parsing ATCUD QR code:", error);
   }
-  
+
   return result;
 }
 
