@@ -19,8 +19,8 @@ export function PageHeader({ title, subtitle, action, backTo }: PageHeaderProps)
   return (
     <>
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between h-16 px-4 gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             {backTo && (
               <Button
                 variant="ghost"
@@ -32,14 +32,14 @@ export function PageHeader({ title, subtitle, action, backTo }: PageHeaderProps)
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             )}
-            <div>
-              <h1 className="text-subheading font-semibold text-foreground">{title}</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-subheading font-semibold text-foreground truncate">{title}</h1>
               {subtitle && (
-                <p className="text-caption text-muted-foreground">{subtitle}</p>
+                <p className="text-caption text-muted-foreground truncate">{subtitle}</p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <Button
               variant="ghost"
               size="icon"

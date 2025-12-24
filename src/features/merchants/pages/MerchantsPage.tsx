@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Store } from "lucide-react";
 import {
   AppLayout,
@@ -31,6 +32,7 @@ const FILTER_OPTIONS: FilterOption[] = [
 ];
 
 export default function MerchantsPage() {
+  const navigate = useNavigate();
   const { merchants, addMerchant, updateMerchant, deleteMerchant } = useMerchants();
   const { receipts } = useReceipts();
 
@@ -199,8 +201,10 @@ export default function MerchantsPage() {
                 meta={merchant.address}
                 value={`€${totalSpent.toFixed(2)}`}
                 valueSecondary={`${receiptCount} receipt${receiptCount !== 1 ? "s" : ""}`}
+                onClick={() => navigate(`/merchants/${merchant.id}`)}
                 onEdit={() => handleEdit(merchant)}
                 onDelete={() => handleDelete(merchant)}
+                showChevron
               />
             );
           })

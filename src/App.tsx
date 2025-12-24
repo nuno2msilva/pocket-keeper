@@ -46,6 +46,7 @@ const DashboardPage = lazy(() => import("@/features/dashboard/pages/DashboardPag
 const ReceiptsPage = lazy(() => import("@/features/receipts/pages/ReceiptsPage"));
 const ReceiptDetail = lazy(() => import("@/features/receipts/pages/ReceiptDetail"));
 const MerchantsPage = lazy(() => import("@/features/merchants/pages/MerchantsPage"));
+const MerchantDetailPage = lazy(() => import("@/features/merchants/pages/MerchantDetailPage"));
 const ProductsPage = lazy(() => import("@/features/products/pages/ProductsPage"));
 const ProductDetailPage = lazy(() => import("@/features/products/pages/ProductDetailPage"));
 const CategoriesPage = lazy(() => import("@/features/categories/pages/CategoriesPage"));
@@ -84,6 +85,7 @@ const App = () => (
                 
                 {/* Data management pages */}
                 <Route path="/merchants" element={<MerchantsPage />} />
+                <Route path="/merchants/:id" element={<MerchantDetailPage />} />
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/products/:id" element={<ProductDetailPage />} />
                 <Route path="/categories" element={<CategoriesPage />} />
