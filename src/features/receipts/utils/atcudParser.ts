@@ -31,16 +31,18 @@ export function parseATCUDQRCode(qrData: string): ATCUDData {
         case "G": // Receipt identification
           result.receiptNumber = value;
           break;
+        case "H": // Time (HHMMSS format)
+          if (value.length >= 4) {
+            // Handle both HHMMSS and HHMM formats
+            const hours = value.slice(0, 2);
+            const minutes = value.slice(2, 4);
+            result.time = `${hours}:${minutes}`;
+          }
+          break;
         case "N": // Total
           result.total = parseFloat(value);
           break;
       }
-    }
-    
-    // Try to extract time if present in receipt number
-    const timeMatch = qrData.match(/(\d{2}:\d{2})/);
-    if (timeMatch) {
-      result.time = timeMatch[1];
     }
   } catch (error) {
     console.error("Error parsing ATCUD QR code:", error);
