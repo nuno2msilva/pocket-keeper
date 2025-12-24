@@ -51,7 +51,6 @@ const ProductsPage = lazy(() => import("@/features/products/pages/ProductsPage")
 const ProductDetailPage = lazy(() => import("@/features/products/pages/ProductDetailPage"));
 const CategoriesPage = lazy(() => import("@/features/categories/pages/CategoriesPage"));
 const CategoryDetailPage = lazy(() => import("@/features/categories/pages/CategoryDetailPage"));
-const InsightsPage = lazy(() => import("@/features/insights/pages/InsightsPage"));
 const SettingsPage = lazy(() => import("@/features/settings/pages/SettingsPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -91,8 +90,7 @@ const App = () => (
                 <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/categories/:id" element={<CategoryDetailPage />} />
                 
-                {/* Analytics and settings */}
-                <Route path="/insights" element={<InsightsPage />} />
+                {/* Settings */}
                 <Route path="/settings" element={<SettingsPage />} />
                 
                 {/* 404 fallback */}
