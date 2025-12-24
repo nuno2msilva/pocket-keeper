@@ -12,7 +12,7 @@ export default function ReceiptsPage() {
   const navigate = useNavigate();
   const { receipts, addReceipt, updateReceipt } = useReceipts();
   const { merchants, getOrCreateMerchant, searchMerchants } = useMerchants();
-  const { products, getOrCreateProduct } = useProducts();
+  const { products, getOrCreateProduct, findProductByBarcode } = useProducts();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
@@ -137,6 +137,7 @@ export default function ReceiptsPage() {
         onGetOrCreateProduct={getOrCreateProduct}
         onGetOrCreateMerchant={getOrCreateMerchant}
         onSearchMerchants={searchMerchants}
+        onFindProductByBarcode={findProductByBarcode}
       />
     </AppLayout>
   );

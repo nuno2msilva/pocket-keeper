@@ -1,4 +1,4 @@
-import { Receipt, Store, Package, Grid3X3, BarChart3 } from "lucide-react";
+import { Receipt, Store, Package, Grid3X3, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +7,7 @@ const navItems = [
   { to: "/merchants", icon: Store, label: "Stores" },
   { to: "/products", icon: Package, label: "Products" },
   { to: "/categories", icon: Grid3X3, label: "Categories" },
-  { to: "/insights", icon: BarChart3, label: "Insights" },
+  { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
 export function BottomNav() {

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Plus, Trash2, Camera, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Camera, ChevronDown, Barcode } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Receipt, ReceiptItem, Merchant, Product, ATCUDData } from "@/features/shared";
 import { QRScanner } from "./QRScanner";
+import { BarcodeScanner } from "./BarcodeScanner";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ReceiptDialogProps {
   open: boolean;
@@ -21,6 +23,7 @@ interface ReceiptDialogProps {
   onGetOrCreateProduct: (name: string) => Product;
   onGetOrCreateMerchant: (name: string, nif?: string) => Merchant;
   onSearchMerchants: (query: string) => Merchant[];
+  onFindProductByBarcode?: (barcode: string) => Product | undefined;
 }
 
 function fuzzyMatch(query: string, text: string): boolean {
@@ -143,6 +146,7 @@ export function ReceiptDialog({
   onGetOrCreateProduct,
   onGetOrCreateMerchant,
   onSearchMerchants,
+  onFindProductByBarcode,
 }: ReceiptDialogProps) {
   const [merchantName, setMerchantName] = useState("");
   const [merchantId, setMerchantId] = useState("");
@@ -155,6 +159,7 @@ export function ReceiptDialog({
   const [total, setTotal] = useState("");
   const [notes, setNotes] = useState("");
   const [showScanner, setShowScanner] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showNifDetails, setShowNifDetails] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -209,6 +214,41 @@ export function ReceiptDialog({
         setMerchantId(foundMerchant.id);
         setMerchantName(foundMerchant.name);
       }
+    }
+  };
+
+  const handleBarcodeScan = (barcode: string) => {
+    setShowBarcodeScanner(false);
+    
+    // Try to find existing product with this barcode
+    const existingProduct = onFindProductByBarcode?.(barcode);
+    
+    if (existingProduct) {
+      // Add item with found product
+      const newItem: ReceiptItem & { inputName: string } = {
+        id: `item-${Date.now()}`,
+        productId: existingProduct.id,
+        productName: existingProduct.name,
+        inputName: existingProduct.name,
+        quantity: 1,
+        unitPrice: existingProduct.defaultPrice || 0,
+        total: existingProduct.defaultPrice || 0,
+      };
+      setItems([...items, newItem]);
+      toast.success(`Found: ${existingProduct.name}`);
+    } else {
+      // Add empty item with barcode info
+      const newItem: ReceiptItem & { inputName: string } = {
+        id: `item-${Date.now()}`,
+        productId: "",
+        productName: "",
+        inputName: `Barcode: ${barcode}`,
+        quantity: 1,
+        unitPrice: 0,
+        total: 0,
+      };
+      setItems([...items, newItem]);
+      toast.info("Product not found. Enter name manually.");
     }
   };
 
@@ -312,6 +352,10 @@ export function ReceiptDialog({
 
   if (showScanner) {
     return <QRScanner onScan={handleScanResult} onClose={() => setShowScanner(false)} />;
+  }
+
+  if (showBarcodeScanner) {
+    return <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowBarcodeScanner(false)} />;
   }
 
   return (
@@ -433,10 +477,21 @@ export function ReceiptDialog({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label>Items</Label>
-              <Button type="button" variant="ghost" size="sm" onClick={addItem}>
-                <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
-                Add Item
-              </Button>
+              <div className="flex gap-1">
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowBarcodeScanner(true)}
+                  aria-label="Scan barcode"
+                >
+                  <Barcode className="w-4 h-4" />
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={addItem}>
+                  <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
+                  Add
+                </Button>
+              </div>
             </div>
 
             {items.length === 0 ? (

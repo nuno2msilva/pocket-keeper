@@ -57,14 +57,16 @@ export function useSubcategories() {
     return subcategories.filter((s) => s.parentCategoryId === categoryId);
   }, [subcategories]);
 
-  // Clean up subcategories that have no products
-  const cleanupEmptySubcategories = useCallback((products: Product[]) => {
-    const usedSubcategoryIds = new Set(
-      products.filter(p => p.subcategoryId).map(p => p.subcategoryId)
-    );
-    setSubcategories((prev) => 
-      prev.filter((s) => usedSubcategoryIds.has(s.id))
-    );
+  // Clean up subcategories that have no products (called automatically by useProducts)
+  const cleanupEmptySubcategories = useCallback((usedSubcategoryIds: Set<string>) => {
+    setSubcategories((prev) => {
+      const filtered = prev.filter((s) => usedSubcategoryIds.has(s.id));
+      // Only update if something changed
+      if (filtered.length !== prev.length) {
+        return filtered;
+      }
+      return prev;
+    });
   }, []);
 
   return { 
@@ -157,15 +159,22 @@ export function useMerchants() {
   };
 }
 
-// Products Hook
-export function useProducts() {
+// Products Hook - with auto-cleanup of empty subcategories
+export function useProducts(onSubcategoryCleanup?: (usedIds: Set<string>) => void) {
   const [products, setProducts] = useState<Product[]>(() =>
     getStoredData("products", SAMPLE_PRODUCTS)
   );
 
   useEffect(() => {
     setStoredData("products", products);
-  }, [products]);
+    // Trigger subcategory cleanup when products change
+    if (onSubcategoryCleanup) {
+      const usedSubcategoryIds = new Set(
+        products.filter(p => p.subcategoryId).map(p => p.subcategoryId!)
+      );
+      onSubcategoryCleanup(usedSubcategoryIds);
+    }
+  }, [products, onSubcategoryCleanup]);
 
   const addProduct = useCallback((product: Omit<Product, "id">) => {
     const newProduct = { ...product, id: generateId("prod") };
@@ -223,6 +232,11 @@ export function useProducts() {
     return newProduct;
   }, [findProductByName]);
 
+  // Find product by barcode
+  const findProductByBarcode = useCallback((barcode: string) => {
+    return products.find((p) => p.barcode === barcode);
+  }, [products]);
+
   return { 
     products, 
     addProduct, 
@@ -230,7 +244,8 @@ export function useProducts() {
     deleteProduct, 
     findProductByName, 
     searchProducts,
-    getOrCreateProduct 
+    getOrCreateProduct,
+    findProductByBarcode
   };
 }
 
