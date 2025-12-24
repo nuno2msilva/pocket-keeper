@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Download, Upload, RotateCcw, CheckCircle2, AlertCircle, Eye } from "lucide-react";
+import { Download, Upload, RotateCcw, CheckCircle2, AlertCircle, Eye, Trash2 } from "lucide-react";
 import { AppLayout, PageHeader } from "@/features/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { CategoryEditor } from "@/features/settings/components/CategoryEditor";
 export default function SettingsPage() {
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle");
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { highContrast, largerTargets, toggleHighContrast, toggleLargerTargets } = useAccessibility();
 
@@ -69,8 +70,24 @@ export default function SettingsPage() {
   };
 
   const handleResetData = () => {
+    // Reset to demo data by clearing and reloading
     localStorage.clear();
-    toast.success("All data cleared. Refreshing...");
+    toast.success("Data reset to demo. Refreshing...");
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
+
+  const handleDeleteAllData = () => {
+    // Delete everything including the demo data flag
+    localStorage.clear();
+    localStorage.setItem("demo_data_loaded", "true"); // Prevent demo data from loading
+    localStorage.setItem("receipts", JSON.stringify([]));
+    localStorage.setItem("merchants", JSON.stringify([]));
+    localStorage.setItem("products", JSON.stringify([]));
+    localStorage.setItem("categories", JSON.stringify([]));
+    localStorage.setItem("subcategories", JSON.stringify([]));
+    toast.success("All data permanently deleted. Refreshing...");
     setTimeout(() => {
       window.location.reload();
     }, 1000);
@@ -184,26 +201,38 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Reset Card */}
+        {/* Danger Zone Card */}
         <Card className="border-destructive/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2 text-destructive">
-              <RotateCcw className="w-5 h-5" />
-              Reset All Data
+              <AlertCircle className="w-5 h-5" />
+              Danger Zone
             </CardTitle>
             <CardDescription>
-              Clear all stored data and start fresh. This cannot be undone.
+              These actions are irreversible. Proceed with caution.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => setResetDialogOpen(true)} 
-              variant="destructive"
-              className="w-full"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset Everything
-            </Button>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                onClick={() => setResetDialogOpen(true)} 
+                variant="outline"
+                className="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset to Demo
+              </Button>
+              <Button 
+                onClick={() => setDeleteDialogOpen(true)} 
+                variant="destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete All
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Reset loads demo data • Delete removes everything permanently
+            </p>
           </CardContent>
         </Card>
 
@@ -214,13 +243,24 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Reset Confirmation */}
       <DeleteConfirmDialog
         open={resetDialogOpen}
         onOpenChange={setResetDialogOpen}
         onConfirm={handleResetData}
-        title="Reset All Data?"
-        description="This will permanently delete all your receipts, products, merchants, and categories. This action cannot be undone."
-        confirmText="Yes, Reset Everything"
+        title="Reset to Demo Data?"
+        description="This will replace all your current data with demo data. Your receipts, products, and merchants will be lost. This is useful for testing the app."
+        confirmText="Yes, Reset to Demo"
+      />
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteAllData}
+        title="Permanently Delete All Data?"
+        description="This will permanently delete ALL your receipts, products, merchants, categories, and settings. Your app will be completely empty. This action CANNOT be undone."
+        confirmText="Yes, Delete Everything"
       />
     </AppLayout>
   );
