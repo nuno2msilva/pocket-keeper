@@ -1,12 +1,29 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Receipt as ReceiptIcon, Check, ChevronRight } from "lucide-react";
-import { AppLayout, PageHeader, EmptyState, useReceipts, useMerchants, useProducts } from "@/features/shared";
+import { Plus, Receipt as ReceiptIcon, Check } from "lucide-react";
+import {
+  AppLayout,
+  PageHeader,
+  EmptyState,
+  ListCard,
+  ListToolbar,
+  useReceipts,
+  useMerchants,
+  useProducts,
+  Receipt,
+  SortOption,
+  FilterOption,
+} from "@/features/shared";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ReceiptDialog } from "../components/ReceiptDialog";
-import { Receipt } from "@/features/shared";
 import { toast } from "sonner";
+
+const SORT_OPTIONS: SortOption[] = [
+  { id: "date", label: "Date" },
+  { id: "total", label: "Total" },
+  { id: "store", label: "Store Name" },
+  { id: "items", label: "Item Count" },
+];
 
 export default function ReceiptsPage() {
   const navigate = useNavigate();
@@ -17,17 +34,107 @@ export default function ReceiptsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
 
+  // Filter & sort state
+  const [search, setSearch] = useState("");
+  const [currentSort, setCurrentSort] = useState("date");
+  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
   const getMerchant = (merchantId: string) => merchants.find((m) => m.id === merchantId);
 
+  // Build filter options from merchants + status filters
+  const filterOptions: FilterOption[] = useMemo(() => {
+    const merchantFilters = merchants
+      .slice(0, 10) // Limit to top 10 merchants
+      .map((m) => ({
+        id: `merchant:${m.id}`,
+        label: m.name,
+        group: "Store",
+      }));
+
+    return [
+      { id: "has-nif", label: "Has NIF", group: "Status" },
+      { id: "this-month", label: "This Month", group: "Date" },
+      { id: "last-month", label: "Last Month", group: "Date" },
+      ...merchantFilters,
+    ];
+  }, [merchants]);
+
   // Calculate this month's total
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
   const thisMonthTotal = receipts
     .filter((r) => {
       const date = new Date(r.date);
       return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
     })
     .reduce((sum, r) => sum + r.total, 0);
+
+  // Filter and sort receipts
+  const filteredReceipts = useMemo(() => {
+    let result = [...receipts];
+
+    // Search filter
+    if (search) {
+      const query = search.toLowerCase();
+      result = result.filter((r) => {
+        const merchant = getMerchant(r.merchantId);
+        return (
+          merchant?.name.toLowerCase().includes(query) ||
+          r.receiptNumber?.toLowerCase().includes(query) ||
+          r.notes?.toLowerCase().includes(query)
+        );
+      });
+    }
+
+    // Apply filters
+    if (activeFilters.length > 0) {
+      result = result.filter((receipt) => {
+        return activeFilters.some((filter) => {
+          if (filter === "has-nif") return receipt.hasCustomerNif;
+          if (filter === "this-month") {
+            const date = new Date(receipt.date);
+            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+          }
+          if (filter === "last-month") {
+            const date = new Date(receipt.date);
+            const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+            const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+            return date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear;
+          }
+          if (filter.startsWith("merchant:")) {
+            return receipt.merchantId === filter.replace("merchant:", "");
+          }
+          return true;
+        });
+      });
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (currentSort) {
+        case "date":
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case "total":
+          comparison = a.total - b.total;
+          break;
+        case "store":
+          const storeA = getMerchant(a.merchantId)?.name || "";
+          const storeB = getMerchant(b.merchantId)?.name || "";
+          comparison = storeA.localeCompare(storeB);
+          break;
+        case "items":
+          comparison = a.items.length - b.items.length;
+          break;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return result;
+  }, [receipts, search, activeFilters, currentSort, sortDirection, merchants, currentMonth, currentYear]);
 
   const handleAdd = () => {
     setSelectedReceipt(null);
@@ -49,8 +156,15 @@ export default function ReceiptsPage() {
     return date.toLocaleDateString("pt-PT", {
       day: "numeric",
       month: "short",
-      year: "numeric",
     });
+  };
+
+  const toggleFilter = (filterId: string) => {
+    setActiveFilters((prev) =>
+      prev.includes(filterId)
+        ? prev.filter((f) => f !== filterId)
+        : [...prev, filterId]
+    );
   };
 
   return (
@@ -65,6 +179,21 @@ export default function ReceiptsPage() {
         }
       />
 
+      <ListToolbar
+        searchPlaceholder="Search receipts..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        sortOptions={SORT_OPTIONS}
+        currentSort={currentSort}
+        onSortChange={setCurrentSort}
+        sortDirection={sortDirection}
+        onSortDirectionChange={() => setSortDirection((d) => (d === "asc" ? "desc" : "asc"))}
+        filterOptions={filterOptions}
+        activeFilters={activeFilters}
+        onFilterChange={toggleFilter}
+        onClearFilters={() => setActiveFilters([])}
+      />
+
       <div className="p-4 space-y-3">
         {receipts.length === 0 ? (
           <EmptyState
@@ -74,56 +203,31 @@ export default function ReceiptsPage() {
             actionLabel="Add Receipt"
             onAction={handleAdd}
           />
+        ) : filteredReceipts.length === 0 ? (
+          <EmptyState
+            icon={<ReceiptIcon className="w-8 h-8 text-muted-foreground" />}
+            title="No matches"
+            description="Try adjusting your search or filters"
+          />
         ) : (
-          receipts
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .map((receipt) => {
-              const merchant = getMerchant(receipt.merchantId);
-              const isNewMerchant = merchant && !merchant.isSolidified;
+          filteredReceipts.map((receipt) => {
+            const merchant = getMerchant(receipt.merchantId);
+            const isNewMerchant = merchant && !merchant.isSolidified;
 
-              return (
-                <button
-                  key={receipt.id}
-                  onClick={() => navigate(`/receipts/${receipt.id}`)}
-                  className="w-full flex items-center gap-4 p-4 bg-card rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all duration-200 animate-fade-in text-left min-h-[72px]"
-                  aria-label={`View receipt from ${merchant?.name || "Unknown"} for €${receipt.total.toFixed(2)}`}
-                >
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 bg-secondary">
-                    🧾
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-body font-semibold text-foreground truncate">
-                        {merchant?.name || "Unknown Store"}
-                      </h3>
-                      {isNewMerchant && (
-                        <Badge variant="outline" className="text-warning border-warning/50 shrink-0 text-[10px]">
-                          New
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-caption text-muted-foreground">
-                      {formatDate(receipt.date)} • {receipt.items.length} item
-                      {receipt.items.length !== 1 ? "s" : ""}
-                    </p>
-                    {receipt.hasCustomerNif && (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-success">
-                        <Check className="w-3 h-3" aria-hidden="true" /> NIF
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <p className="text-body font-semibold text-foreground">
-                      €{receipt.total.toFixed(2)}
-                    </p>
-                  </div>
-
-                  <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
-                </button>
-              );
-            })
+            return (
+              <ListCard
+                key={receipt.id}
+                icon="🧾"
+                title={merchant?.name || "Unknown Store"}
+                badge={isNewMerchant ? { label: "New", variant: "warning" } : undefined}
+                subtitle={`${formatDate(receipt.date)} • ${receipt.items.length} item${receipt.items.length !== 1 ? "s" : ""}`}
+                meta={receipt.hasCustomerNif ? "✓ NIF" : undefined}
+                value={`€${receipt.total.toFixed(2)}`}
+                onClick={() => navigate(`/receipts/${receipt.id}`)}
+                showChevron
+              />
+            );
+          })
         )}
       </div>
 
