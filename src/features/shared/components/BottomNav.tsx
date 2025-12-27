@@ -11,6 +11,7 @@
  * - Works on all screen sizes
  */
 
+import { forwardRef } from "react";
 import { Home, Receipt, Store, Package, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -24,13 +25,16 @@ const NAV_ITEMS = [
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
-export function BottomNav() {
-  return (
-    <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe-bottom"
-      role="navigation"
-      aria-label="Main navigation"
-    >
+export const BottomNav = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
+  function BottomNav(props, ref) {
+    return (
+      <nav 
+        ref={ref}
+        className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe-bottom"
+        role="navigation"
+        aria-label="Main navigation"
+        {...props}
+      >
       {/* 
         Navigation container
         - Centered on larger screens
@@ -62,4 +66,4 @@ export function BottomNav() {
       </div>
     </nav>
   );
-}
+});

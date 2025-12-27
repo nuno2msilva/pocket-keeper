@@ -5,16 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ReceiptDialog } from "../components/ReceiptDialog";
 
 export default function ReceiptDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { receipts, deleteReceipt } = useReceipts();
-  const { merchants } = useMerchants();
-  const { products } = useProducts();
+  const { receipts, deleteReceipt, updateReceipt } = useReceipts();
+  const { merchants, getOrCreateMerchant, searchMerchants } = useMerchants();
+  const { products, getOrCreateProduct, findProductByBarcode, updatePricesFromReceipt } = useProducts();
   const { categories } = useCategories();
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const receipt = receipts.find((r) => r.id === id);
   const merchant = receipt ? merchants.find((m) => m.id === receipt.merchantId) : null;
@@ -63,7 +65,7 @@ export default function ReceiptDetail() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate(`/receipts/${receipt.id}/edit`)}
+              onClick={() => setEditDialogOpen(true)}
               aria-label="Edit receipt"
             >
               <Pencil className="w-5 h-5" />
@@ -185,6 +187,24 @@ export default function ReceiptDetail() {
         title="Delete Receipt"
         description="Are you sure you want to delete this receipt? This action cannot be undone."
         onConfirm={handleDelete}
+      />
+
+      <ReceiptDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        receipt={receipt}
+        merchants={merchants}
+        products={products}
+        onSave={(data) => {
+          updatePricesFromReceipt(data.items, data.merchantId, data.date);
+          updateReceipt(receipt.id, data);
+          toast.success("Receipt updated");
+          setEditDialogOpen(false);
+        }}
+        onGetOrCreateProduct={getOrCreateProduct}
+        onGetOrCreateMerchant={getOrCreateMerchant}
+        onSearchMerchants={searchMerchants}
+        onFindProductByBarcode={findProductByBarcode}
       />
     </AppLayout>
   );

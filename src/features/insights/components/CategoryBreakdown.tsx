@@ -1,5 +1,6 @@
+import { forwardRef } from "react";
 import { ChevronRight } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Category, Subcategory, Product } from "@/features/shared/types";
 
 interface CategoryBreakdownProps {
@@ -11,13 +12,14 @@ interface CategoryBreakdownProps {
   onCategoryClick: (categoryId: string) => void;
 }
 
-export function CategoryBreakdown({
-  categorySpending,
-  categories,
-  subcategories,
-  monthTotal,
-  onCategoryClick,
-}: CategoryBreakdownProps) {
+export const CategoryBreakdown = forwardRef<HTMLDivElement, CategoryBreakdownProps>(
+  function CategoryBreakdown({
+    categorySpending,
+    categories,
+    subcategories,
+    monthTotal,
+    onCategoryClick,
+  }, ref) {
   // Sort categories by spending
   const sortedCategories = categories
     .filter((cat) => categorySpending[cat.id]?.total > 0)
@@ -34,7 +36,7 @@ export function CategoryBreakdown({
   }
 
   return (
-    <div className="space-y-2">
+    <div ref={ref} className="space-y-2">
       {sortedCategories.map((category) => {
         const spending = categorySpending[category.id];
         const percentage = monthTotal > 0 ? (spending.total / monthTotal) * 100 : 0;
@@ -103,4 +105,4 @@ export function CategoryBreakdown({
       )}
     </div>
   );
-}
+});
