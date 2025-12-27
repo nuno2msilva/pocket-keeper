@@ -22,13 +22,11 @@ interface ProductDialogProps {
 export function ProductDialog({ open, onOpenChange, product, categories, subcategories, onSave, onAddSubcategory }: ProductDialogProps) {
   const [name, setName] = useState("");
   const [barcode, setBarcode] = useState("");
-  const [defaultPrice, setDefaultPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [subcategoryInput, setSubcategoryInput] = useState("");
   const [showSubcategorySuggestions, setShowSubcategorySuggestions] = useState(false);
   const [isWeighted, setIsWeighted] = useState(false);
-  const [excludeFromPriceHistory, setExcludeFromPriceHistory] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>();
   const subcategoryInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,22 +46,18 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
     if (product) {
       setName(product.name);
       setBarcode(product.barcode || "");
-      setDefaultPrice(product.defaultPrice?.toString() || "");
       setCategoryId(product.categoryId || "");
       setSubcategoryId(product.subcategoryId || "");
       const existingSub = subcategories.find((s) => s.id === product.subcategoryId);
       setSubcategoryInput(existingSub?.name || "");
       setIsWeighted(product.isWeighted || false);
-      setExcludeFromPriceHistory(product.excludeFromPriceHistory || false);
     } else {
       setName("");
       setBarcode("");
-      setDefaultPrice("");
       setCategoryId("");
       setSubcategoryId("");
       setSubcategoryInput("");
       setIsWeighted(false);
-      setExcludeFromPriceHistory(false);
     }
     setErrors({});
   }, [product, open, subcategories]);
@@ -115,11 +109,9 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
     onSave({ 
       name: name.trim(), 
       barcode: barcode.trim() || undefined,
-      defaultPrice: defaultPrice ? parseFloat(defaultPrice) : undefined, 
       categoryId: categoryId || undefined, 
       subcategoryId: finalSubcategoryId || undefined, 
       isWeighted, 
-      excludeFromPriceHistory, 
       isSolidified: true 
     });
     onOpenChange(false);
@@ -138,10 +130,6 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
           <div className="space-y-2">
             <Label htmlFor="barcode">EAN / Barcode</Label>
             <Input id="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} placeholder="e.g., 5601234567890" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="price">Default Price (€{isWeighted ? "/kg" : "/unit"})</Label>
-            <Input id="price" type="number" step="0.01" min="0" value={defaultPrice} onChange={(e) => setDefaultPrice(e.target.value)} placeholder={isWeighted ? "e.g., 5.99" : "e.g., 1.29"} />
           </div>
           <div className="space-y-2">
             <Label>Category</Label>
@@ -205,16 +193,15 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
           )}
 
           <div className="flex items-center justify-between">
-            <Label>Pricing Type</Label>
+            <div className="space-y-0.5">
+              <Label>Pricing Type</Label>
+              <p className="text-caption text-muted-foreground">How this product is sold</p>
+            </div>
             <div className="flex items-center gap-2 text-sm">
               <span className={!isWeighted ? "font-medium" : "text-muted-foreground"}>Unit</span>
               <Switch checked={isWeighted} onCheckedChange={setIsWeighted} />
               <span className={isWeighted ? "font-medium" : "text-muted-foreground"}>Weight</span>
             </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5"><Label>Exclude from Price History</Label><p className="text-caption text-muted-foreground">For promo items</p></div>
-            <Switch checked={excludeFromPriceHistory} onCheckedChange={setExcludeFromPriceHistory} />
           </div>
         </div>
         <DialogFooter><Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button><Button onClick={handleSave}>{product ? "Save" : "Create"}</Button></DialogFooter>

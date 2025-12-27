@@ -373,13 +373,17 @@ interface PriceHistoryEntry {
 ### 4.4 Product Editing
 
 Products can be edited from the detail page or via swipe actions. **Editable fields**:
-- **Name**: User-preferred product name
+- **Name**: User-preferred product name (receipts use abbreviations, users can rename)
 - **EAN/Barcode**: Product barcode for scanning lookup
 - **Category**: Product categorization
 - **Subcategory**: Fine-grained categorization
-- **Default Price**: Base price per unit/kg
 - **Pricing Type**: Unit-based or weight-based (per kg)
-- **Exclude from Price History**: For promotional items
+
+**Non-editable fields**:
+- **Price**: Prices are derived exclusively from receipts to maintain accuracy. The `defaultPrice` is automatically updated when a new receipt is added.
+
+**Per-receipt settings** (in ReceiptDialog, not ProductDialog):
+- **Exclude from Price History**: Toggle per receipt item for promotional prices
 
 ### 4.5 Price History Tracking
 
