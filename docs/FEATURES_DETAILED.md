@@ -218,6 +218,13 @@ This is a key feature for progressive receipt entry:
 6. When items equal scanned total, placeholder disappears
 7. **If items EXCEED scanned total** → Error shown, cannot save
 
+**Force Edit Total**: When a receipt has a scanned total (from QR), the total can be force-edited via pencil icon. This is useful for:
+- Returns/refunds where the actual total changed
+- QR scan errors
+- Partial receipt entry
+
+When edited, the scanned total is replaced with the new value, and discrepancy logic continues as normal.
+
 **Visual**:
 ```
 ┌─────────────────────────────────────────┐
@@ -354,7 +361,8 @@ interface PriceHistoryEntry {
 **URL**: `/products/:id`
 
 **Shows**:
-- Product info (name, category, barcode)
+- Product info (name, category, barcode/EAN)
+- **Edit button** in header to modify product details
 - Price statistics:
   - Current price (most recent)
   - Min/Max/Average price ever
@@ -362,7 +370,18 @@ interface PriceHistoryEntry {
 - Price history chart (line chart over time)
 - Price by merchant table
 
-### 4.4 Price History Tracking
+### 4.4 Product Editing
+
+Products can be edited from the detail page or via swipe actions. **Editable fields**:
+- **Name**: User-preferred product name
+- **EAN/Barcode**: Product barcode for scanning lookup
+- **Category**: Product categorization
+- **Subcategory**: Fine-grained categorization
+- **Default Price**: Base price per unit/kg
+- **Pricing Type**: Unit-based or weight-based (per kg)
+- **Exclude from Price History**: For promotional items
+
+### 4.5 Price History Tracking
 
 **When a receipt is saved**:
 1. For each item where `excludeFromPriceHistory !== true`
@@ -381,7 +400,7 @@ interface PriceHistoryEntry {
 - Items explicitly marked `excludeFromPriceHistory`
 - Weighted items where price varies by actual weight
 
-### 4.5 Weighted Products
+### 4.6 Weighted Products
 
 Products like meat, cheese, fruits sold by weight:
 - `isWeighted: true`

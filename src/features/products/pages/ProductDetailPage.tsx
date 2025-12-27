@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Store, Calendar, Scale, Package } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Store, Calendar, Scale, Package, Pencil, Barcode } from "lucide-react";
+import { ProductDialog } from "../components/ProductDialog";
 import {
   AppLayout,
   useProducts,
@@ -16,10 +17,11 @@ import { cn } from "@/lib/utils";
 export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { products, getPricesByMerchant } = useProducts();
+  const { products, getPricesByMerchant, updateProduct } = useProducts();
   const { categories } = useCategories();
-  const { subcategories } = useSubcategories();
+  const { subcategories, addSubcategory } = useSubcategories();
   const { merchants } = useMerchants();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const product = products.find((p) => p.id === id);
   const category = product?.categoryId ? categories.find((c) => c.id === product.categoryId) : undefined;
@@ -85,7 +87,16 @@ export default function ProductDetailPage() {
               {category?.name || "Uncategorized"}
               {subcategory && ` › ${subcategory.name}`}
             </p>
+            {product.barcode && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                <Barcode className="w-3 h-3" />
+                {product.barcode}
+              </p>
+            )}
           </div>
+          <Button variant="ghost" size="icon" onClick={() => setEditDialogOpen(true)}>
+            <Pencil className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Current Price Card */}
@@ -266,6 +277,19 @@ export default function ProductDetailPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Edit Dialog */}
+        <ProductDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          product={product}
+          categories={categories}
+          subcategories={subcategories}
+          onSave={(updates) => {
+            updateProduct(product.id, updates);
+          }}
+          onAddSubcategory={addSubcategory}
+        />
       </div>
     </AppLayout>
   );

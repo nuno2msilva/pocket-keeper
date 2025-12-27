@@ -21,6 +21,7 @@ interface ProductDialogProps {
 
 export function ProductDialog({ open, onOpenChange, product, categories, subcategories, onSave, onAddSubcategory }: ProductDialogProps) {
   const [name, setName] = useState("");
+  const [barcode, setBarcode] = useState("");
   const [defaultPrice, setDefaultPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
@@ -28,7 +29,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
   const [showSubcategorySuggestions, setShowSubcategorySuggestions] = useState(false);
   const [isWeighted, setIsWeighted] = useState(false);
   const [excludeFromPriceHistory, setExcludeFromPriceHistory] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>();
   const subcategoryInputRef = useRef<HTMLInputElement>(null);
 
   const filteredSubcategories = categoryId ? subcategories.filter((s) => s.parentCategoryId === categoryId) : [];
@@ -46,6 +47,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
   useEffect(() => {
     if (product) {
       setName(product.name);
+      setBarcode(product.barcode || "");
       setDefaultPrice(product.defaultPrice?.toString() || "");
       setCategoryId(product.categoryId || "");
       setSubcategoryId(product.subcategoryId || "");
@@ -55,6 +57,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
       setExcludeFromPriceHistory(product.excludeFromPriceHistory || false);
     } else {
       setName("");
+      setBarcode("");
       setDefaultPrice("");
       setCategoryId("");
       setSubcategoryId("");
@@ -111,6 +114,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
     
     onSave({ 
       name: name.trim(), 
+      barcode: barcode.trim() || undefined,
       defaultPrice: defaultPrice ? parseFloat(defaultPrice) : undefined, 
       categoryId: categoryId || undefined, 
       subcategoryId: finalSubcategoryId || undefined, 
@@ -129,7 +133,11 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
           <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Leite Mimosa 1L" />
-            {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            {errors?.name && <p className="text-sm text-destructive">{errors.name}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="barcode">EAN / Barcode</Label>
+            <Input id="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} placeholder="e.g., 5601234567890" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="price">Default Price (€{isWeighted ? "/kg" : "/unit"})</Label>
