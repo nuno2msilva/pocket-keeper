@@ -492,6 +492,7 @@ export function ReceiptDialog({
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           total: item.total,
+          excludeFromPriceHistory: !!item.excludeFromPriceHistory,
         };
       })
       .filter((item) => item.productName.trim() || item.productId === PLACEHOLDER_PRODUCT_ID);
@@ -919,6 +920,18 @@ export function ReceiptDialog({
                               aria-label="Item total"
                             />
                           </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <div className="space-y-0.5">
+                            <Label className="text-[11px]">Exclude from price history</Label>
+                            <p className="text-caption text-muted-foreground">Use for promos/one-offs</p>
+                          </div>
+                          <Switch
+                            checked={!!item.excludeFromPriceHistory}
+                            onCheckedChange={(checked) => updateItem(index, { excludeFromPriceHistory: checked })}
+                            aria-label="Exclude item from price history"
+                          />
                         </div>
                       </>
                     )}
