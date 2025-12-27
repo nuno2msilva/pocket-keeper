@@ -136,7 +136,7 @@ interface ReceiptItem {
   quantity: number;        // 2 (or 0.5 for weighted items)
   unitPrice: number;       // 1.29
   total: number;           // 2.58 (quantity × unitPrice)
-  excludeFromPriceHistory?: boolean;
+  excludeFromPriceHistory?: boolean; // Per-item toggle for promos
 }
 ```
 
@@ -295,14 +295,24 @@ interface Merchant {
 
 **Shows**:
 - Merchant info (name, NIF, address)
+- **Edit button** in header to modify merchant details
 - Statistics:
   - Total receipts
   - Total spent
-  - Last visit date
   - Average receipt value
-- List of all receipts from this merchant
+- Monthly spending breakdown (progress bars)
+- List of all receipts from this merchant (searchable, sortable, filterable)
 
-### 3.4 Solidification
+### 3.4 Merchant Editing
+
+Merchants can be edited from the detail page. **Editable fields**:
+- **Name**: Store name
+- **NIF**: Portuguese tax ID (9 digits)
+- **Address**: Store location
+
+Editing a merchant automatically sets `isSolidified: true`.
+
+### 3.5 Solidification
 
 When a merchant is auto-created from a receipt, `isSolidified = false`. When user:
 - Edits the merchant details, OR
@@ -324,11 +334,10 @@ interface Product {
   name: string;                     // "Leite Mimosa 1L"
   categoryId?: string;              // "cat-groceries"
   subcategoryId?: string;           // "subcat-dairy"
-  defaultPrice?: number;            // 1.29 (most recent price)
+  defaultPrice?: number;            // 1.29 (most recent price, auto-updated)
   isWeighted: boolean;              // true = sold by kg
-  excludeFromPriceHistory: boolean; // Skip price tracking
   isSolidified: boolean;            // User confirmed vs auto-created
-  barcode?: string;                 // "5601234567890"
+  barcode?: string;                 // "5601234567890" or "N/A" if no barcode
   priceHistory: PriceHistoryEntry[];
 }
 
@@ -338,6 +347,8 @@ interface PriceHistoryEntry {
   merchantId: string; // Which store had this price
 }
 ```
+
+**Note**: `excludeFromPriceHistory` is now a per-receipt-item setting, not a product-level setting.
 
 ### 4.2 Product List Page
 
@@ -372,9 +383,10 @@ interface PriceHistoryEntry {
 
 ### 4.4 Product Editing
 
-Products can be edited from the detail page or via swipe actions. **Editable fields**:
+Products can be edited from the detail page via the pencil icon. **Editable fields**:
 - **Name**: User-preferred product name (receipts use abbreviations, users can rename)
-- **EAN/Barcode**: Product barcode for scanning lookup
+- **Has EAN checkbox**: Toggle to indicate if product has a barcode
+- **EAN/Barcode**: Product barcode for scanning lookup (shown only when "Has EAN" is checked)
 - **Category**: Product categorization
 - **Subcategory**: Fine-grained categorization
 - **Pricing Type**: Unit-based or weight-based (per kg)
@@ -382,8 +394,10 @@ Products can be edited from the detail page or via swipe actions. **Editable fie
 **Non-editable fields**:
 - **Price**: Prices are derived exclusively from receipts to maintain accuracy. The `defaultPrice` is automatically updated when a new receipt is added.
 
+**Barcode display**: Products always show the barcode line on the detail page. Displays "N/A" when no barcode is set.
+
 **Per-receipt settings** (in ReceiptDialog, not ProductDialog):
-- **Exclude from Price History**: Toggle per receipt item for promotional prices
+- **Exclude from Price History**: Toggle per receipt item for promotional prices. This allows users to add receipts quickly and mark promotional items when reviewing later.
 
 ### 4.5 Price History Tracking
 

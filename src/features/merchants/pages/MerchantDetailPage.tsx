@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, MapPin, Hash, Receipt, TrendingUp, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Hash, Receipt, TrendingUp, Calendar, Pencil } from "lucide-react";
+import { MerchantDialog } from "../components/MerchantDialog";
 import {
   AppLayout,
   useMerchants,
@@ -23,7 +24,7 @@ const SORT_OPTIONS: SortOption[] = [
 export default function MerchantDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { merchants } = useMerchants();
+  const { merchants, updateMerchant } = useMerchants();
   const { receipts } = useReceipts();
   const { categories } = useCategories();
 
@@ -31,6 +32,7 @@ export default function MerchantDetailPage() {
   const [currentSort, setCurrentSort] = useState("date");
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const merchant = merchants.find((m) => m.id === id);
 
@@ -178,6 +180,9 @@ export default function MerchantDetailPage() {
               )}
             </div>
           </div>
+          <Button variant="ghost" size="icon" onClick={() => setEditDialogOpen(true)}>
+            <Pencil className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -285,6 +290,16 @@ export default function MerchantDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Edit Dialog */}
+        <MerchantDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          merchant={merchant}
+          onSave={(updates) => {
+            updateMerchant(merchant.id, updates);
+          }}
+        />
       </div>
     </AppLayout>
   );
