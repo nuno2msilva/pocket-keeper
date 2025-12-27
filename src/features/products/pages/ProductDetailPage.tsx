@@ -87,12 +87,10 @@ export default function ProductDetailPage() {
               {category?.name || "Uncategorized"}
               {subcategory && ` › ${subcategory.name}`}
             </p>
-            {product.barcode && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <Barcode className="w-3 h-3" />
-                {product.barcode}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <Barcode className="w-3 h-3" />
+              {product.barcode && product.barcode.trim() && product.barcode !== "N/A" ? product.barcode : "N/A"}
+            </p>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setEditDialogOpen(true)}>
             <Pencil className="w-4 h-4" />
