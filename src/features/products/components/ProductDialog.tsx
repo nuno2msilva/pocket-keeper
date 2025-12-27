@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Product, Category, Subcategory } from "@/features/shared";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ interface ProductDialogProps {
 
 export function ProductDialog({ open, onOpenChange, product, categories, subcategories, onSave, onAddSubcategory }: ProductDialogProps) {
   const [name, setName] = useState("");
+  const [hasBarcode, setHasBarcode] = useState(false);
   const [barcode, setBarcode] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
@@ -45,7 +47,9 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
   useEffect(() => {
     if (product) {
       setName(product.name);
-      setBarcode(product.barcode || "");
+      const productHasBarcode = !!product.barcode && product.barcode !== "N/A";
+      setHasBarcode(productHasBarcode);
+      setBarcode(productHasBarcode ? product.barcode! : "");
       setCategoryId(product.categoryId || "");
       setSubcategoryId(product.subcategoryId || "");
       const existingSub = subcategories.find((s) => s.id === product.subcategoryId);
@@ -53,6 +57,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
       setIsWeighted(product.isWeighted || false);
     } else {
       setName("");
+      setHasBarcode(false);
       setBarcode("");
       setCategoryId("");
       setSubcategoryId("");
@@ -108,7 +113,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
     
     onSave({ 
       name: name.trim(), 
-      barcode: barcode.trim() || undefined,
+      barcode: hasBarcode ? (barcode.trim() || undefined) : "N/A",
       categoryId: categoryId || undefined, 
       subcategoryId: finalSubcategoryId || undefined, 
       isWeighted, 
@@ -128,8 +133,25 @@ export function ProductDialog({ open, onOpenChange, product, categories, subcate
             {errors?.name && <p className="text-sm text-destructive">{errors.name}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="barcode">EAN / Barcode</Label>
-            <Input id="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} placeholder="e.g., 5601234567890" />
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="hasBarcode" 
+                checked={hasBarcode} 
+                onCheckedChange={(checked) => {
+                  setHasBarcode(checked === true);
+                  if (!checked) setBarcode("");
+                }}
+              />
+              <Label htmlFor="hasBarcode" className="cursor-pointer">Has EAN / Barcode</Label>
+            </div>
+            {hasBarcode && (
+              <Input 
+                id="barcode" 
+                value={barcode} 
+                onChange={(e) => setBarcode(e.target.value)} 
+                placeholder="e.g., 5601234567890" 
+              />
+            )}
           </div>
           <div className="space-y-2">
             <Label>Category</Label>
