@@ -11,7 +11,7 @@
  */
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Plus, Trash2, Camera, ChevronDown, Barcode, AlertTriangle, Package } from "lucide-react";
+import { Plus, Trash2, Camera, ChevronDown, Barcode, AlertTriangle, Package, Pencil, Check, X as XIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,8 +190,10 @@ export function ReceiptDialog({
   const [items, setItems] = useState<DialogItem[]>([]);
   const [notes, setNotes] = useState("");
   
-  // Scanned total from QR code - this is the reference total that cannot be manually edited
+  // Scanned total from QR code - can be force-edited if needed
   const [scannedTotal, setScannedTotal] = useState<number | null>(null);
+  const [isEditingTotal, setIsEditingTotal] = useState(false);
+  const [editTotalValue, setEditTotalValue] = useState("");
   
   // Scanner visibility (only used on mobile)
   const [showScanner, setShowScanner] = useState(false);
@@ -514,7 +516,32 @@ export function ReceiptDialog({
   // Clear scanned total (allow user to remove the constraint)
   const handleClearScannedTotal = () => {
     setScannedTotal(null);
+    setIsEditingTotal(false);
     toast.info("Scanned total cleared. Total will be calculated from items.");
+  };
+
+  // Start editing the scanned total
+  const handleStartEditTotal = () => {
+    setEditTotalValue(scannedTotal?.toFixed(2) || "0.00");
+    setIsEditingTotal(true);
+  };
+
+  // Confirm the edited total
+  const handleConfirmEditTotal = () => {
+    const newTotal = parseFloat(editTotalValue);
+    if (!isNaN(newTotal) && newTotal >= 0) {
+      setScannedTotal(newTotal);
+      setIsEditingTotal(false);
+      toast.success(`Total updated to €${newTotal.toFixed(2)}`);
+    } else {
+      toast.error("Please enter a valid amount");
+    }
+  };
+
+  // Cancel editing
+  const handleCancelEditTotal = () => {
+    setIsEditingTotal(false);
+    setEditTotalValue("");
   };
 
   if (showScanner) {
@@ -643,25 +670,78 @@ export function ReceiptDialog({
             </CollapsibleContent>
           </Collapsible>
 
-          {/* Total Display (read-only) */}
+          {/* Total Display */}
           <div className="p-4 bg-muted/50 rounded-lg space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
-                  {scannedTotal !== null ? "Receipt Total (scanned)" : "Calculated Total"}
+                  {scannedTotal !== null ? "Receipt Total" : "Calculated Total"}
                 </span>
                 {scannedTotal !== null && (
                   <Badge variant="secondary" className="text-xs">
-                    From QR
+                    {isEditingTotal ? "Editing" : "From QR"}
                   </Badge>
                 )}
               </div>
-              <span className="text-2xl font-bold">
-                €{displayTotal.toFixed(2)}
-              </span>
+              
+              {/* Total display/edit */}
+              {isEditingTotal ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-lg font-bold">€</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editTotalValue}
+                    onChange={(e) => setEditTotalValue(e.target.value)}
+                    className="w-24 h-8 text-right font-bold"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleConfirmEditTotal();
+                      if (e.key === "Escape") handleCancelEditTotal();
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleConfirmEditTotal}
+                    className="text-green-600 hover:text-green-700 hover:bg-green-100"
+                  >
+                    <Check className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleCancelEditTotal}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold">
+                    €{displayTotal.toFixed(2)}
+                  </span>
+                  {scannedTotal !== null && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={handleStartEditTotal}
+                      className="text-muted-foreground hover:text-foreground"
+                      title="Edit total"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
             
-            {scannedTotal !== null && (
+            {scannedTotal !== null && !isEditingTotal && (
               <>
                 <div className="flex justify-between text-sm border-t border-border pt-2">
                   <span className="text-muted-foreground">Items subtotal:</span>
