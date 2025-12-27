@@ -77,6 +77,19 @@ The app features a clean, modern interface optimized for mobile devices with:
 
 ---
 
+## 📚 Documentation
+
+Detailed documentation for developers and rebuild efforts:
+
+| Document | Description |
+|----------|-------------|
+| [FEATURES_DETAILED.md](docs/FEATURES_DETAILED.md) | Hyper-detailed feature specs with code examples, UI mockups, and rebuild priority plan |
+| [TECHNICAL_SPECIFICATION.md](docs/TECHNICAL_SPECIFICATION.md) | Full architecture, Docker setup, Python models, business logic |
+| [API_REFERENCE.md](docs/API_REFERENCE.md) | Complete REST API documentation with all endpoints |
+| [DATABASE_SCHEMA.sql](docs/DATABASE_SCHEMA.sql) | Ready-to-run PostgreSQL schema with seed data |
+
+---
+
 ## 🏗️ Architecture
 
 ### Project Structure
