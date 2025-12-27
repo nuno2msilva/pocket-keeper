@@ -5,7 +5,6 @@ A mobile-first personal expense tracking application built with React, TypeScrip
 ![React](https://img.shields.io/badge/React-18.3-blue?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwind-css)
-![Capacitor](https://img.shields.io/badge/Capacitor-8.0-119EFF?logo=capacitor)
 ![PWA](https://img.shields.io/badge/PWA-Enabled-5A0FC8?logo=pwa)
 
 ## 📱 Screenshots
@@ -259,65 +258,6 @@ npm run preview
 
 ---
 
-## 📱 Mobile App (Android APK)
-
-The app can be built as a native Android application using Capacitor.
-
-### Prerequisites
-
-1. **Java JDK 17+**
-   ```bash
-   sudo apt install openjdk-17-jdk
-   ```
-
-2. **Android SDK & Command Line Tools**
-   ```bash
-   # Download Android command-line tools from:
-   # https://developer.android.com/studio#command-line-tools-only
-   
-   # Extract and set up environment variables
-   export ANDROID_HOME=$HOME/android-sdk
-   export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-   export PATH=$PATH:$ANDROID_HOME/platform-tools
-   
-   # Install required SDK components
-   sdkmanager "platform-tools"
-   sdkmanager "platforms;android-34"
-   sdkmanager "build-tools;34.0.0"
-   
-   # Accept licenses
-   sdkmanager --licenses
-   ```
-
-### Build APK
-
-```bash
-# Add Android platform (first time only)
-npx cap add android
-
-# Build the web app
-npm run build
-
-# Sync web assets to Android
-npx cap sync android
-
-# Build debug APK
-cd android
-./gradlew assembleDebug
-
-# APK location:
-# android/app/build/outputs/apk/debug/app-debug.apk
-```
-
-### Build Signed Release APK
-
-```bash
-cd android
-
-# Build release APK (requires signing configuration)
-./gradlew assembleRelease
-```
-
 ---
 
 ## 🌐 Progressive Web App (PWA)
@@ -352,7 +292,7 @@ The app is PWA-ready and can be installed on any device:
 | **Swipe Gestures** | react-swipeable |
 | **Theme** | next-themes |
 | **PWA** | vite-plugin-pwa |
-| **Mobile** | Capacitor |
+
 | **Build Tool** | Vite |
 
 ---
@@ -365,9 +305,6 @@ The app is PWA-ready and can be installed on any device:
 | `npm run build` | Build for production |
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
-| `npx cap add android` | Add Android platform |
-| `npx cap sync android` | Sync web assets to Android |
-| `npx cap run android` | Run on Android device/emulator |
 
 ---
 
