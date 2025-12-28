@@ -374,6 +374,7 @@ interface PriceHistoryEntry {
 **Shows**:
 - Product info (name, category, barcode/EAN)
 - **Edit button** in header to modify product details
+- **Add Price button** in "Price by Store" section for manual price registration
 - Price statistics:
   - Current price (most recent)
   - Min/Max/Average price ever
@@ -399,7 +400,37 @@ Products can be edited from the detail page via the pencil icon. **Editable fiel
 **Per-receipt settings** (in ReceiptDialog, not ProductDialog):
 - **Exclude from Price History**: Toggle per receipt item for promotional prices. This allows users to add receipts quickly and mark promotional items when reviewing later.
 
-### 4.5 Price History Tracking
+### 4.5 Manual Price Registration
+
+**Purpose**: Register a product's price at a store without purchasing it (e.g., price scouting, comparing prices before buying).
+
+**Access**: Product Detail Page → "Price by Store" section → "Add Price" button
+
+**Dialog Fields**:
+| Field | Required | Notes |
+|-------|----------|-------|
+| Price (€) | ✅ | Numeric input, must be > 0 |
+| Merchant | ✅ | **Fuzzy search** with autocomplete from existing merchants |
+
+**Merchant Input Behavior** (same as Receipt dialog):
+1. User types merchant name
+2. **Fuzzy search** shows matching merchants in real-time
+3. User can select existing merchant or type new name
+4. If new name entered, merchant is auto-created with `isSolidified: false`
+
+**Price History Rules**:
+- Manual prices are treated the same as receipt prices
+- Latest registered price (by date) becomes the `defaultPrice`
+- Price is added to `priceHistory[]` with current date
+- Does not create a receipt (no items, no totals)
+
+**Use Cases**:
+- Price scouting before purchasing
+- Tracking competitor prices
+- Quick price updates without full receipt entry
+- Cataloging prices from store flyers or websites
+
+### 4.6 Price History Tracking
 
 **When a receipt is saved**:
 1. For each item where `excludeFromPriceHistory !== true`
@@ -418,7 +449,7 @@ Products can be edited from the detail page via the pencil icon. **Editable fiel
 - Items explicitly marked `excludeFromPriceHistory`
 - Weighted items where price varies by actual weight
 
-### 4.6 Weighted Products
+### 4.7 Weighted Products
 
 Products like meat, cheese, fruits sold by weight:
 - `isWeighted: true`
@@ -438,7 +469,7 @@ interface Category {
   name: string;      // "Groceries"
   icon: string;      // "🛒" (emoji)
   color: string;     // "hsl(152, 55%, 45%)"
-  isDefault: boolean;// true = cannot delete
+  isDefault: boolean;// Legacy field, no longer restricts deletion
 }
 
 interface Subcategory {
@@ -448,9 +479,15 @@ interface Subcategory {
 }
 ```
 
-### 5.2 Default Categories
+### 5.2 Sample Categories
 
-These are pre-loaded and cannot be deleted:
+These are **sample categories** pre-loaded for convenience. **Users have full control**:
+- ✅ Edit any category (name, icon)
+- ✅ Delete any category (including samples)
+- ✅ Add custom categories
+- ✅ Reset to sample categories if desired
+
+**Pre-loaded Samples**:
 
 | ID | Name | Icon | Color (HSL) |
 |----|------|------|-------------|
@@ -463,7 +500,12 @@ These are pre-loaded and cannot be deleted:
 | cat-entertainment | Entertainment | 🎬 | hsl(340, 65%, 55%) |
 | cat-other | Other | 📦 | hsl(0, 0%, 50%) |
 
-### 5.3 Default Subcategories
+**Deletion Behavior**:
+- When a category is deleted, products in that category become **uncategorized** (`categoryId: undefined`)
+- Subcategories linked to the deleted category are automatically cleaned up if no products reference them
+- Receipts retain their data (items still exist, just uncategorized)
+
+### 5.3 Sample Subcategories
 
 | Subcategory | Parent |
 |-------------|--------|

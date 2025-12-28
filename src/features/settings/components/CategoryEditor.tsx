@@ -72,7 +72,7 @@ export function CategoryEditor() {
           Categories
         </CardTitle>
         <CardDescription>
-          Edit category names and emojis, or remove custom categories
+          Edit category names, emojis, or remove categories. All categories are fully customizable.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -107,11 +107,6 @@ export function CategoryEditor() {
               <>
                 <span className="text-xl w-8 text-center">{category.icon}</span>
                 <span className="flex-1 font-medium">{category.name}</span>
-                {category.isDefault && (
-                  <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
-                    Default
-                  </span>
-                )}
                 <Button
                   size="icon"
                   variant="ghost"
@@ -119,15 +114,13 @@ export function CategoryEditor() {
                 >
                   <Pencil className="w-4 h-4" />
                 </Button>
-                {!category.isDefault && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setDeleteId(category.id)}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setDeleteId(category.id)}
+                >
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
               </>
             )}
           </div>
