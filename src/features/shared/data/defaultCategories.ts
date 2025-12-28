@@ -1,19 +1,19 @@
 import { Category, Subcategory } from "../types";
 
 /**
- * Default categories - these are backend-ready fixed categories.
+ * Sample categories - these are examples to get started.
+ * Users have full control: they can edit, delete, or add any category.
  * In production, these would come from the database.
- * Users can edit name/icon but cannot delete default categories.
  */
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: "cat-groceries", name: "Groceries", icon: "🛒", color: "hsl(152, 55%, 45%)", isDefault: true },
-  { id: "cat-dining", name: "Dining", icon: "🍽️", color: "hsl(15, 75%, 55%)", isDefault: true },
-  { id: "cat-transport", name: "Transport", icon: "🚗", color: "hsl(38, 85%, 50%)", isDefault: true },
-  { id: "cat-shopping", name: "Shopping", icon: "🛍️", color: "hsl(280, 55%, 55%)", isDefault: true },
-  { id: "cat-health", name: "Health", icon: "💊", color: "hsl(200, 70%, 50%)", isDefault: true },
-  { id: "cat-utilities", name: "Utilities", icon: "💡", color: "hsl(220, 60%, 55%)", isDefault: true },
-  { id: "cat-entertainment", name: "Entertainment", icon: "🎬", color: "hsl(340, 65%, 55%)", isDefault: true },
-  { id: "cat-other", name: "Other", icon: "📦", color: "hsl(0, 0%, 50%)", isDefault: true },
+  { id: "cat-groceries", name: "Groceries", icon: "🛒", color: "hsl(152, 55%, 45%)", isDefault: false },
+  { id: "cat-dining", name: "Dining", icon: "🍽️", color: "hsl(15, 75%, 55%)", isDefault: false },
+  { id: "cat-transport", name: "Transport", icon: "🚗", color: "hsl(38, 85%, 50%)", isDefault: false },
+  { id: "cat-shopping", name: "Shopping", icon: "🛍️", color: "hsl(280, 55%, 55%)", isDefault: false },
+  { id: "cat-health", name: "Health", icon: "💊", color: "hsl(200, 70%, 50%)", isDefault: false },
+  { id: "cat-utilities", name: "Utilities", icon: "💡", color: "hsl(220, 60%, 55%)", isDefault: false },
+  { id: "cat-entertainment", name: "Entertainment", icon: "🎬", color: "hsl(340, 65%, 55%)", isDefault: false },
+  { id: "cat-other", name: "Other", icon: "📦", color: "hsl(0, 0%, 50%)", isDefault: false },
 ];
 
 export const DEFAULT_SUBCATEGORIES: Subcategory[] = [
