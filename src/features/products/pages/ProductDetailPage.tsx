@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Store, Calendar, Scale, Package, Pencil, Barcode } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Store, Calendar, Scale, Package, Pencil, Barcode, Plus } from "lucide-react";
 import { ProductDialog } from "../components/ProductDialog";
+import { AddPriceDialog } from "../components/AddPriceDialog";
 import {
   AppLayout,
   useProducts,
@@ -13,15 +14,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { products, getPricesByMerchant, updateProduct } = useProducts();
+  const { products, getPricesByMerchant, updateProduct, updatePriceFromReceipt } = useProducts();
   const { categories } = useCategories();
   const { subcategories, addSubcategory } = useSubcategories();
-  const { merchants } = useMerchants();
+  const { merchants, searchMerchants, getOrCreateMerchant } = useMerchants();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addPriceDialogOpen, setAddPriceDialogOpen] = useState(false);
 
   const product = products.find((p) => p.id === id);
   const category = product?.categoryId ? categories.find((c) => c.id === product.categoryId) : undefined;
@@ -151,15 +154,26 @@ export default function ProductDetailPage() {
         {/* Price Comparison by Store */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Store className="w-4 h-4" />
-              Price by Store
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Store className="w-4 h-4" />
+                Price by Store
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setAddPriceDialogOpen(true)}
+                className="gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                Add Price
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {pricesByMerchant.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No purchase history yet. Add this product to a receipt to start tracking prices.
+                No purchase history yet. Add a price manually or include this product in a receipt.
               </p>
             ) : (
               <div className="space-y-3">
@@ -287,6 +301,24 @@ export default function ProductDetailPage() {
             updateProduct(product.id, updates);
           }}
           onAddSubcategory={addSubcategory}
+        />
+
+        {/* Add Price Dialog */}
+        <AddPriceDialog
+          open={addPriceDialogOpen}
+          onOpenChange={setAddPriceDialogOpen}
+          productName={product.name}
+          merchants={merchants}
+          searchMerchants={searchMerchants}
+          onSave={(price, merchantId, merchantName, isNew) => {
+            const merchant = isNew 
+              ? getOrCreateMerchant(merchantName) 
+              : merchants.find(m => m.id === merchantId)!;
+            
+            const today = new Date().toISOString().split("T")[0];
+            updatePriceFromReceipt(product.id, price, merchant.id, today);
+            toast.success(`Price €${price.toFixed(2)} added for ${merchant.name}`);
+          }}
         />
       </div>
     </AppLayout>
