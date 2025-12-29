@@ -1,107 +1,53 @@
-/**
- * App.tsx - Main Application Entry Point
- * 
- * This is the root component that sets up:
- * - Routing (navigation between pages)
- * - Global providers (tooltips, toasts, query client)
- * - Lazy loading for better performance
- */
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Transactions from './pages/Transactions';
+import Categories from './pages/Categories';
+import Budget from './pages/Budget';
+import Reports from './pages/Reports';
+import Profile from './pages/Profile';
+import Layout from './components/Layout';
 
-import { Suspense, lazy, useEffect } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
-import { loadDemoDataIfNeeded } from "@/features/shared/data/demoData";
-
-// Loading component shown while pages load
-function PageLoader() {
+function App() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-        <p className="text-muted-foreground text-sm">Loading...</p>
-      </div>
-    </div>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router basename="/pocket-keeper">
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="transactions" element={<Transactions />} />
+              <Route path="categories" element={<Categories />} />
+              <Route path="budget" element={<Budget />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+
+            {/* Catch all - redirect to dashboard */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
-
-// Initialize demo data on first load
-function DemoDataInitializer({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    loadDemoDataIfNeeded();
-  }, []);
-  return <>{children}</>;
-}
-
-// ============================================================================
-// LAZY LOADED PAGES
-// Pages are loaded only when needed, making initial load faster
-// ============================================================================
-
-// Main pages
-const DashboardPage = lazy(() => import("@/features/dashboard/pages/DashboardPage"));
-const ReceiptsPage = lazy(() => import("@/features/receipts/pages/ReceiptsPage"));
-const ReceiptDetail = lazy(() => import("@/features/receipts/pages/ReceiptDetail"));
-const MerchantsPage = lazy(() => import("@/features/merchants/pages/MerchantsPage"));
-const MerchantDetailPage = lazy(() => import("@/features/merchants/pages/MerchantDetailPage"));
-const ProductsPage = lazy(() => import("@/features/products/pages/ProductsPage"));
-const ProductDetailPage = lazy(() => import("@/features/products/pages/ProductDetailPage"));
-const CategoriesPage = lazy(() => import("@/features/categories/pages/CategoriesPage"));
-const CategoryDetailPage = lazy(() => import("@/features/categories/pages/CategoryDetailPage"));
-const SettingsPage = lazy(() => import("@/features/settings/pages/SettingsPage"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
-
-// Query client for data fetching (future use with backend)
-const queryClient = new QueryClient();
-
-// ============================================================================
-// MAIN APP COMPONENT
-// ============================================================================
-
-const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <DemoDataInitializer>
-          {/* Toast notifications */}
-          <Toaster />
-          <Sonner />
-          
-          {/* Router setup */}
-          <BrowserRouter basename="/pocket-keeper">
-            {/* Suspense shows loader while lazy components load */}
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Dashboard (home) */}
-                <Route path="/" element={<DashboardPage />} />
-                
-                {/* Receipts */}
-                <Route path="/receipts" element={<ReceiptsPage />} />
-                <Route path="/receipts/:id" element={<ReceiptDetail />} />
-                
-                {/* Data management pages */}
-                <Route path="/merchants" element={<MerchantsPage />} />
-                <Route path="/merchants/:id" element={<MerchantDetailPage />} />
-                <Route path="/products" element={<ProductsPage />} />
-                <Route path="/products/:id" element={<ProductDetailPage />} />
-                <Route path="/categories" element={<CategoriesPage />} />
-                <Route path="/categories/:id" element={<CategoryDetailPage />} />
-                
-                {/* Settings */}
-                <Route path="/settings" element={<SettingsPage />} />
-                
-                {/* 404 fallback */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </DemoDataInitializer>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
-);
 
 export default App;
