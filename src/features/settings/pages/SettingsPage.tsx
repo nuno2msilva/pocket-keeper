@@ -1,92 +1,109 @@
-import { useState, useRef } from "react";
-import { Download, Upload, RotateCcw, CheckCircle2, AlertCircle, Eye, Trash2 } from "lucide-react";
-import { AppLayout, PageHeader } from "@/features/shared";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { exportAllData, importData } from "@/features/shared/data/repository";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { DeleteConfirmDialog } from "@/features/shared/components/DeleteConfirmDialog";
-import { useAccessibility } from "@/features/shared/hooks/useAccessibility";
-import { CategoryEditor } from "@/features/settings/components/CategoryEditor";
+import { Download, Upload, Trash2, FileJson } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function SettingsPage() {
-  const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle");
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { highContrast, largerTargets, toggleHighContrast, toggleLargerTargets } = useAccessibility();
+  const navigate = useNavigate();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
-  const handleExport = () => {
+  const handleExportData = () => {
     try {
-      const data = exportAllData();
-      const blob = new Blob([data], { type: "application/json" });
+      const data = {
+        receipts: JSON.parse(localStorage.getItem("expense-tracker-receipts") || "[]"),
+        merchants: JSON.parse(localStorage.getItem("expense-tracker-merchants") || "[]"),
+        products: JSON.parse(localStorage.getItem("expense-tracker-products") || "[]"),
+        categories: JSON.parse(localStorage.getItem("expense-tracker-categories") || "[]"),
+        subcategories: JSON.parse(localStorage.getItem("expense-tracker-subcategories") || "[]"),
+        exportDate: new Date().toISOString(),
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `expense-tracker-backup-${new Date().toISOString().split("T")[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `expense-tracker-backup-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success("Data exported successfully");
+
+      toast.success("Data exported successfully!");
     } catch (error) {
       toast.error("Failed to export data");
+      console.error(error);
     }
   };
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    try {
-      const text = await file.text();
-      const result = importData(text);
-      
-      if (result.success) {
-        setImportStatus("success");
-        toast.success("Data imported successfully. Refresh to see changes.");
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        setImportStatus("error");
-        toast.error(result.error || "Import failed");
-      }
-    } catch (error) {
-      setImportStatus("error");
-      toast.error("Failed to read file");
-    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
 
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+        if (!data.receipts || !data.merchants || !data.products) {
+          throw new Error("Invalid data format");
+        }
+
+        setShowImportDialog(true);
+
+        // Store the data temporarily for confirmation
+        (window as any).__importData = data;
+      } catch (error) {
+        toast.error("Invalid file format");
+        console.error(error);
+      }
+    };
+    reader.readAsText(file);
   };
 
-  const handleResetData = () => {
-    // Reset to demo data by clearing and reloading
-    localStorage.clear();
-    toast.success("Data reset to demo. Refreshing...");
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+  const confirmImport = () => {
+    const data = (window as any).__importData;
+    if (!data) return;
+
+    localStorage.setItem("expense-tracker-receipts", JSON.stringify(data.receipts));
+    localStorage.setItem("expense-tracker-merchants", JSON.stringify(data.merchants));
+    localStorage.setItem("expense-tracker-products", JSON.stringify(data.products));
+    localStorage.setItem("expense-tracker-categories", JSON.stringify(data.categories || []));
+    localStorage.setItem("expense-tracker-subcategories", JSON.stringify(data.subcategories || []));
+
+    delete (window as any).__importData;
+    setShowImportDialog(false);
+    toast.success("Data imported successfully!");
+    setTimeout(() => window.location.reload(), 1000);
   };
 
   const handleDeleteAllData = () => {
-    // Delete everything including the demo data flag
+    // Delete everything from localStorage
     localStorage.clear();
-    localStorage.setItem("demo_data_loaded", "true"); // Prevent demo data from loading
-    localStorage.setItem("receipts", JSON.stringify([]));
-    localStorage.setItem("merchants", JSON.stringify([]));
-    localStorage.setItem("products", JSON.stringify([]));
-    localStorage.setItem("categories", JSON.stringify([]));
-    localStorage.setItem("subcategories", JSON.stringify([]));
+    
+    // Set flag to prevent demo data from loading
+    localStorage.setItem("expense-tracker-demo-loaded-v2", "true");
+    
+    // Set empty arrays for all data
+    localStorage.setItem("expense-tracker-receipts", JSON.stringify([]));
+    localStorage.setItem("expense-tracker-merchants", JSON.stringify([]));
+    localStorage.setItem("expense-tracker-products", JSON.stringify([]));
+    localStorage.setItem("expense-tracker-categories", JSON.stringify([]));
+    localStorage.setItem("expense-tracker-subcategories", JSON.stringify([]));
+    
     toast.success("All data permanently deleted. Refreshing...");
     setTimeout(() => {
       window.location.reload();
@@ -94,174 +111,100 @@ export default function SettingsPage() {
   };
 
   return (
-    <AppLayout>
-      <PageHeader
-        title="Settings"
-        subtitle="Manage your data"
-      />
-
-      <div className="p-4 space-y-4">
-        {/* Categories Card */}
-        <CategoryEditor />
-
-        {/* Accessibility Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Eye className="w-5 h-5 text-primary" />
-              Accessibility
-            </CardTitle>
-            <CardDescription>
-              Adjust display settings for better visibility and usability
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="high-contrast" className="text-base">High Contrast</Label>
-                <p className="text-sm text-muted-foreground">Increase color contrast for better visibility</p>
-              </div>
-              <Switch
-                id="high-contrast"
-                checked={highContrast}
-                onCheckedChange={toggleHighContrast}
-                className="touch-target"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="larger-targets" className="text-base">Larger Touch Targets</Label>
-                <p className="text-sm text-muted-foreground">Increase button and control sizes</p>
-              </div>
-              <Switch
-                id="larger-targets"
-                checked={largerTargets}
-                onCheckedChange={toggleLargerTargets}
-                className="touch-target"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Export Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Download className="w-5 h-5 text-primary" />
-              Export Data
-            </CardTitle>
-            <CardDescription>
-              Download all your data as a JSON backup file
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handleExport} className="w-full touch-target-lg">
-              <Download className="w-4 h-4 mr-2" />
-              Download Backup
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Import Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Upload className="w-5 h-5 text-primary" />
-              Import Data
-            </CardTitle>
-            <CardDescription>
-              Restore data from a previously exported backup file
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <Button onClick={handleImportClick} variant="outline" className="w-full touch-target-lg">
-              <Upload className="w-4 h-4 mr-2" />
-              Select Backup File
-            </Button>
-            
-            {importStatus === "success" && (
-              <div className="flex items-center gap-2 text-success text-sm">
-                <CheckCircle2 className="w-4 h-4" />
-                Import successful!
-              </div>
-            )}
-            {importStatus === "error" && (
-              <div className="flex items-center gap-2 text-destructive text-sm">
-                <AlertCircle className="w-4 h-4" />
-                Import failed. Check your file format.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Danger Zone Card */}
-        <Card className="border-destructive/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2 text-destructive">
-              <AlertCircle className="w-5 h-5" />
-              Danger Zone
-            </CardTitle>
-            <CardDescription>
-              These actions are irreversible. Proceed with caution.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                onClick={() => setResetDialogOpen(true)} 
-                variant="outline"
-                className="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset to Demo
-              </Button>
-              <Button 
-                onClick={() => setDeleteDialogOpen(true)} 
-                variant="destructive"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete All
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Reset loads demo data • Delete removes everything permanently
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* App Info */}
-        <div className="pt-4 text-center text-muted-foreground text-sm space-y-1">
-          <p>Expense Tracker v1.0</p>
-          <p>Data stored locally on your device</p>
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Settings</h1>
+        <p className="text-muted-foreground">Manage your application settings and data</p>
       </div>
 
-      {/* Reset Confirmation */}
-      <DeleteConfirmDialog
-        open={resetDialogOpen}
-        onOpenChange={setResetDialogOpen}
-        onConfirm={handleResetData}
-        title="Reset to Demo Data?"
-        description="This will replace all your current data with demo data. Your receipts, products, and merchants will be lost. This is useful for testing the app."
-        confirmText="Yes, Reset to Demo"
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileJson className="h-5 w-5" />
+            Data Management
+          </CardTitle>
+          <CardDescription>Export, import, or delete your expense data</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button onClick={handleExportData} variant="outline" className="flex-1">
+                <Download className="mr-2 h-4 w-4" />
+                Export Data
+              </Button>
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportData}
+                  className="hidden"
+                  id="import-file"
+                />
+                <label htmlFor="import-file" className="w-full">
+                  <Button asChild variant="outline" className="w-full">
+                    <span>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Import Data
+                    </span>
+                  </Button>
+                </label>
+              </div>
+            </div>
 
-      {/* Delete Confirmation */}
-      <DeleteConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteAllData}
-        title="Permanently Delete All Data?"
-        description="This will permanently delete ALL your receipts, products, merchants, categories, and settings. Your app will be completely empty. This action CANNOT be undone."
-        confirmText="Yes, Delete Everything"
-      />
-    </AppLayout>
+            <Alert variant="destructive">
+              <AlertDescription>
+                Danger Zone: Deleting all data is permanent and cannot be undone.
+              </AlertDescription>
+            </Alert>
+
+            <Button
+              onClick={() => setShowDeleteDialog(true)}
+              variant="destructive"
+              className="w-full"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete All Data
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete all your receipts,
+              merchants, products, categories, and subcategories from your device.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAllData}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Import Data</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will replace all your current data with the imported data. Do you want to
+              continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmImport}>Import</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
