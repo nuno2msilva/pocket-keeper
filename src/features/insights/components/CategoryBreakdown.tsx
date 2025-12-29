@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Category, Subcategory, Product } from "@/features/shared/types";
@@ -20,6 +20,9 @@ export const CategoryBreakdown = forwardRef<HTMLDivElement, CategoryBreakdownPro
     monthTotal,
     onCategoryClick,
   }, ref) {
+  // Toggle state for showing price vs percentage
+  const [showPercentage, setShowPercentage] = useState(false);
+
   // Sort categories by spending
   const sortedCategories = categories
     .filter((cat) => categorySpending[cat.id]?.total > 0)
@@ -34,6 +37,11 @@ export const CategoryBreakdown = forwardRef<HTMLDivElement, CategoryBreakdownPro
       </Card>
     );
   }
+
+  const toggleDisplay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowPercentage(!showPercentage);
+  };
 
   return (
     <div ref={ref} className="space-y-2">
@@ -57,7 +65,16 @@ export const CategoryBreakdown = forwardRef<HTMLDivElement, CategoryBreakdownPro
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-sm truncate">{category.name}</span>
-                  <span className="font-bold text-sm">€{spending.total.toFixed(2)}</span>
+                  <button
+                    onClick={toggleDisplay}
+                    className="font-bold text-sm hover:text-primary transition-colors"
+                    title="Click to toggle between price and percentage"
+                  >
+                    {showPercentage 
+                      ? `${percentage.toFixed(1)}%`
+                      : `€${spending.total.toFixed(2)}`
+                    }
+                  </button>
                 </div>
                 <div className="flex items-center justify-between mt-1">
                   <div className="flex-1 mr-3">
@@ -72,7 +89,10 @@ export const CategoryBreakdown = forwardRef<HTMLDivElement, CategoryBreakdownPro
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {percentage.toFixed(0)}%
+                    {showPercentage 
+                      ? `€${spending.total.toFixed(2)}`
+                      : `${percentage.toFixed(0)}%`
+                    }
                   </span>
                 </div>
               </div>
@@ -92,9 +112,15 @@ export const CategoryBreakdown = forwardRef<HTMLDivElement, CategoryBreakdownPro
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm">Uncategorized</span>
-                <span className="font-bold text-sm">
-                  €{categorySpending["uncategorized"].total.toFixed(2)}
-                </span>
+                <button
+                  onClick={toggleDisplay}
+                  className="font-bold text-sm hover:text-primary transition-colors"
+                >
+                  {showPercentage 
+                    ? `${((categorySpending["uncategorized"].total / monthTotal) * 100).toFixed(1)}%`
+                    : `€${categorySpending["uncategorized"].total.toFixed(2)}`
+                  }
+                </button>
               </div>
               <p className="text-xs text-muted-foreground">
                 {categorySpending["uncategorized"].items} items need categorization

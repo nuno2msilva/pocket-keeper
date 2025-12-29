@@ -1,41 +1,54 @@
 import { useState } from "react";
-import { Pencil, Trash2, Check, X } from "lucide-react";
+import { Pencil, Trash2, Check, X, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Category } from "@/features/shared/types";
 import { useCategories } from "@/features/shared/hooks/useRepository";
 import { DeleteConfirmDialog } from "@/features/shared/components/DeleteConfirmDialog";
 import { toast } from "sonner";
+
+// Preset colors for quick selection
+const PRESET_COLORS = [
+  "#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16",
+  "#22c55e", "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9",
+  "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
+  "#ec4899", "#f43f5e", "#78716c", "#64748b", "#475569",
+];
 
 export function CategoryEditor() {
   const { categories, updateCategory, deleteCategory, addCategory } = useCategories();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editIcon, setEditIcon] = useState("");
+  const [editColor, setEditColor] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState("📁");
-  const [newColor, setNewColor] = useState("hsl(220, 70%, 50%)");
+  const [newColor, setNewColor] = useState("#3b82f6");
 
   const startEdit = (category: Category) => {
     setEditingId(category.id);
     setEditName(category.name);
     setEditIcon(category.icon);
+    setEditColor(category.color || "#3b82f6");
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditName("");
     setEditIcon("");
+    setEditColor("");
   };
 
   const saveEdit = () => {
     if (!editingId || !editName.trim()) return;
     updateCategory(editingId, { 
       name: editName.trim(), 
-      icon: editIcon || "📁"
+      icon: editIcon || "📁",
+      color: editColor || "#3b82f6"
     });
     toast.success("Category updated");
     cancelEdit();
@@ -53,12 +66,13 @@ export function CategoryEditor() {
     addCategory({
       name: newName.trim(),
       icon: newIcon || "📁",
-      color: newColor,
+      color: newColor || "#3b82f6",
       isDefault: false,
     });
     toast.success("Category added");
     setNewName("");
     setNewIcon("📁");
+    setNewColor("#3b82f6");
     setIsAdding(false);
   };
 
@@ -72,7 +86,7 @@ export function CategoryEditor() {
           Categories
         </CardTitle>
         <CardDescription>
-          Edit category names, emojis, or remove categories. All categories are fully customizable.
+          Edit category names, emojis, colors, or remove categories. All categories are fully customizable.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -96,6 +110,52 @@ export function CategoryEditor() {
                   className="flex-1"
                   placeholder="Category name"
                 />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      className="shrink-0"
+                      style={{ backgroundColor: editColor }}
+                    >
+                      <Palette className="w-4 h-4" style={{ color: getContrastColor(editColor) }} />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3" align="end">
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-5 gap-2">
+                        {PRESET_COLORS.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            className="w-7 h-7 rounded-md border-2 transition-transform hover:scale-110"
+                            style={{ 
+                              backgroundColor: color,
+                              borderColor: editColor === color ? "hsl(var(--foreground))" : "transparent"
+                            }}
+                            onClick={() => setEditColor(color)}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="text"
+                          value={editColor}
+                          onChange={(e) => setEditColor(e.target.value)}
+                          placeholder="#3b82f6"
+                          className="flex-1 text-sm"
+                          maxLength={7}
+                        />
+                        <input
+                          type="color"
+                          value={editColor}
+                          onChange={(e) => setEditColor(e.target.value)}
+                          className="w-10 h-8 rounded cursor-pointer border border-border"
+                        />
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Button size="icon" variant="ghost" onClick={saveEdit}>
                   <Check className="w-4 h-4 text-success" />
                 </Button>
@@ -105,8 +165,18 @@ export function CategoryEditor() {
               </>
             ) : (
               <>
-                <span className="text-xl w-8 text-center">{category.icon}</span>
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-lg shrink-0"
+                  style={{ backgroundColor: `${category.color}20` }}
+                >
+                  {category.icon}
+                </div>
                 <span className="flex-1 font-medium">{category.name}</span>
+                <div 
+                  className="w-4 h-4 rounded-full shrink-0 border border-border"
+                  style={{ backgroundColor: category.color }}
+                  title={category.color}
+                />
                 <Button
                   size="icon"
                   variant="ghost"
@@ -142,6 +212,52 @@ export function CategoryEditor() {
               placeholder="New category name"
               autoFocus
             />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="shrink-0"
+                  style={{ backgroundColor: newColor }}
+                >
+                  <Palette className="w-4 h-4" style={{ color: getContrastColor(newColor) }} />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-3" align="end">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-5 gap-2">
+                    {PRESET_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className="w-7 h-7 rounded-md border-2 transition-transform hover:scale-110"
+                        style={{ 
+                          backgroundColor: color,
+                          borderColor: newColor === color ? "hsl(var(--foreground))" : "transparent"
+                        }}
+                        onClick={() => setNewColor(color)}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      value={newColor}
+                      onChange={(e) => setNewColor(e.target.value)}
+                      placeholder="#3b82f6"
+                      className="flex-1 text-sm"
+                      maxLength={7}
+                    />
+                    <input
+                      type="color"
+                      value={newColor}
+                      onChange={(e) => setNewColor(e.target.value)}
+                      className="w-10 h-8 rounded cursor-pointer border border-border"
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
             <Button size="icon" variant="ghost" onClick={handleAdd}>
               <Check className="w-4 h-4 text-success" />
             </Button>
@@ -170,4 +286,19 @@ export function CategoryEditor() {
       </CardContent>
     </Card>
   );
+}
+
+// Helper function to determine text color for contrast
+function getContrastColor(hexColor: string): string {
+  // Default to white if invalid
+  if (!hexColor || !hexColor.startsWith("#") || hexColor.length < 7) return "#ffffff";
+  
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  return luminance > 0.5 ? "#000000" : "#ffffff";
 }
