@@ -13,7 +13,8 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-base: "/your-repo-name/",  server: {
+base: "/pocket-keeper/",  
+server: {
     host: "::",
     port: 8080,
   },
