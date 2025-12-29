@@ -71,7 +71,7 @@ const App = () => (
           <Sonner />
           
           {/* Router setup */}
-          <BrowserRouter>
+          <BrowserRouter basename="/pocket-keeper">
             {/* Suspense shows loader while lazy components load */}
             <Suspense fallback={<PageLoader />}>
               <Routes>
