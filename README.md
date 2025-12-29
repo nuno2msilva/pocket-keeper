@@ -1,3 +1,6 @@
+# Disclaimer
+The project as it is, works merely as a demo. It is functional and practical as a short to medium term, but it might be prone to failure and or bugs. It uses localstorage to save data, but it can exported to a json. Final product may vary.
+
 # 🧾 Pocket Keeper - Personal Expense Tracker
 
 A mobile-first personal expense tracking application built with React, TypeScript, and Tailwind CSS. Track your receipts, manage merchants and products, and gain insights into your spending habits with beautiful visualizations.
