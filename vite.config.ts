@@ -13,6 +13,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: "/pocket-keeper/",
   server: {
     host: "::",
     port: 8080,
@@ -36,7 +37,7 @@ export default defineConfig(({ mode }) => ({
         background_color: "#f5f7fa",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/",
+        start_url: "/pocket-keeper/",
         icons: [
           {
             src: "/favicon.ico",
