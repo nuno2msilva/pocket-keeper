@@ -1,52 +1,51 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import Categories from './pages/Categories';
-import Budget from './pages/Budget';
-import Reports from './pages/Reports';
-import Profile from './pages/Profile';
-import Layout from './components/Layout';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/theme-provider';
+import DemoDataInitializer from '@/components/DemoDataInitializer';
+import PageLoader from '@/components/PageLoader';
+
+// Lazy load pages for better performance
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Transactions = lazy(() => import('@/pages/Transactions'));
+const Categories = lazy(() => import('@/pages/Categories'));
+const Budgets = lazy(() => import('@/pages/Budgets'));
+const Reports = lazy(() => import('@/pages/Reports'));
+const Settings = lazy(() => import('@/pages/Settings'));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Router basename="/pocket-keeper">
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            {/* Protected routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="transactions" element={<Transactions />} />
-              <Route path="categories" element={<Categories />} />
-              <Route path="budget" element={<Budget />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="profile" element={<Profile />} />
-            </Route>
-
-            {/* Catch all - redirect to dashboard */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="system" storageKey="pocket-keeper-theme">
+        <DemoDataInitializer />
+        <BrowserRouter basename="/pocket-keeper">
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/transactions" element={<Transactions />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/budgets" element={<Budgets />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+        <Toaster />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
