@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Receipt, ReceiptItem, Merchant, Product, ATCUDData } from "@/features/shared";
@@ -184,10 +185,14 @@ export function ReceiptDialog({
   const [merchantId, setMerchantId] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [hasReceiptNumber, setHasReceiptNumber] = useState(false);
   const [receiptNumber, setReceiptNumber] = useState("");
   const [hasCustomerNif, setHasCustomerNif] = useState(false);
   const [customerNif, setCustomerNif] = useState("");
   const [items, setItems] = useState<DialogItem[]>([]);
+  
+  // Item input editing state - allow empty values during editing
+  const [itemInputs, setItemInputs] = useState<Record<string, { quantity: string; unitPrice: string }>>({});
   const [notes, setNotes] = useState("");
   
   // Scanned total from QR code - can be force-edited if needed
@@ -280,6 +285,8 @@ export function ReceiptDialog({
         setMerchantId(receipt.merchantId);
         setDate(receipt.date);
         setTime(receipt.time || "");
+        const hasReceiptNum = !!receipt.receiptNumber;
+        setHasReceiptNumber(hasReceiptNum);
         setReceiptNumber(receipt.receiptNumber || "");
         setHasCustomerNif(receipt.hasCustomerNif);
         setCustomerNif(receipt.customerNif || "");
@@ -315,10 +322,12 @@ export function ReceiptDialog({
     setMerchantId("");
     setDate(new Date().toISOString().split("T")[0]);
     setTime("");
+    setHasReceiptNumber(false);
     setReceiptNumber("");
     setHasCustomerNif(false);
     setCustomerNif("");
     setItems([]);
+    setItemInputs({});
     setScannedTotal(null);
     setNotes("");
     setErrors({});
@@ -447,6 +456,17 @@ export function ReceiptDialog({
     // When no scanned total, need at least one real item
     if (scannedTotal === null && realItems.length === 0) {
       newErrors.items = "Add at least one item";
+    }
+    // Validate item values - check for empty or invalid quantity/price
+    const invalidItems = realItems.filter(item => {
+      const qtyInput = itemInputs[item.id]?.quantity;
+      const priceInput = itemInputs[item.id]?.unitPrice;
+      const qtyValid = qtyInput === undefined || (parseFloat(qtyInput) > 0);
+      const priceValid = priceInput === undefined || (parseFloat(priceInput) >= 0);
+      return !qtyValid || !priceValid || item.quantity <= 0;
+    });
+    if (invalidItems.length > 0) {
+      newErrors.items = "All items must have valid quantity and price";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -628,13 +648,25 @@ export function ReceiptDialog({
 
           {/* Receipt Number */}
           <div className="space-y-2">
-            <Label htmlFor="receiptNumber">Receipt Number</Label>
-            <Input
-              id="receiptNumber"
-              value={receiptNumber}
-              onChange={(e) => setReceiptNumber(e.target.value)}
-              placeholder="e.g., FT 2024/12345"
-            />
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="hasReceiptNumber" 
+                checked={hasReceiptNumber} 
+                onCheckedChange={(checked) => {
+                  setHasReceiptNumber(checked === true);
+                  if (!checked) setReceiptNumber("");
+                }}
+              />
+              <Label htmlFor="hasReceiptNumber" className="cursor-pointer">Has Receipt Number</Label>
+            </div>
+            {hasReceiptNumber && (
+              <Input
+                id="receiptNumber"
+                value={receiptNumber}
+                onChange={(e) => setReceiptNumber(e.target.value)}
+                placeholder="e.g., FT 2024/12345"
+              />
+            )}
           </div>
 
           {/* Customer NIF Toggle */}
@@ -884,16 +916,34 @@ export function ReceiptDialog({
                               {products.find(p => p.id === item.productId)?.isWeighted ? "Weight" : "Qty"}
                             </Label>
                             <Input
-                              type="number"
-                              min={products.find(p => p.id === item.productId)?.isWeighted ? "0.001" : "1"}
-                              step={products.find(p => p.id === item.productId)?.isWeighted ? "0.001" : "1"}
-                              value={item.quantity}
+                              type="text"
+                              inputMode="decimal"
+                              value={itemInputs[item.id]?.quantity ?? item.quantity.toString()}
                               onChange={(e) => {
-                                const isWeighted = products.find(p => p.id === item.productId)?.isWeighted;
-                                const qty = isWeighted 
-                                  ? parseFloat(e.target.value) || 0.001
-                                  : parseInt(e.target.value) || 1;
-                                updateItem(index, { quantity: qty });
+                                const value = e.target.value;
+                                // Allow empty string and valid decimal numbers
+                                if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                                  setItemInputs(prev => ({
+                                    ...prev,
+                                    [item.id]: { ...prev[item.id], quantity: value, unitPrice: prev[item.id]?.unitPrice ?? item.unitPrice.toString() }
+                                  }));
+                                  // Only update actual value if valid number
+                                  const numVal = parseFloat(value);
+                                  if (!isNaN(numVal) && numVal > 0) {
+                                    updateItem(index, { quantity: numVal });
+                                  }
+                                }
+                              }}
+                              onBlur={() => {
+                                // On blur, validate and reset if empty/invalid
+                                const input = itemInputs[item.id]?.quantity;
+                                const numVal = parseFloat(input || "");
+                                if (isNaN(numVal) || numVal <= 0) {
+                                  setItemInputs(prev => ({
+                                    ...prev,
+                                    [item.id]: { ...prev[item.id], quantity: item.quantity.toString() }
+                                  }));
+                                }
                               }}
                               aria-label={products.find(p => p.id === item.productId)?.isWeighted ? "Weight" : "Quantity"}
                             />
@@ -901,13 +951,35 @@ export function ReceiptDialog({
                           <div>
                             <Label className="text-[11px]">Price</Label>
                             <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={item.unitPrice}
-                              onChange={(e) =>
-                                updateItem(index, { unitPrice: parseFloat(e.target.value) || 0 })
-                              }
+                              type="text"
+                              inputMode="decimal"
+                              value={itemInputs[item.id]?.unitPrice ?? item.unitPrice.toString()}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Allow empty string and valid decimal numbers
+                                if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                                  setItemInputs(prev => ({
+                                    ...prev,
+                                    [item.id]: { ...prev[item.id], unitPrice: value, quantity: prev[item.id]?.quantity ?? item.quantity.toString() }
+                                  }));
+                                  // Only update actual value if valid number
+                                  const numVal = parseFloat(value);
+                                  if (!isNaN(numVal) && numVal >= 0) {
+                                    updateItem(index, { unitPrice: numVal });
+                                  }
+                                }
+                              }}
+                              onBlur={() => {
+                                // On blur, validate and reset if empty/invalid
+                                const input = itemInputs[item.id]?.unitPrice;
+                                const numVal = parseFloat(input || "");
+                                if (isNaN(numVal) || numVal < 0) {
+                                  setItemInputs(prev => ({
+                                    ...prev,
+                                    [item.id]: { ...prev[item.id], unitPrice: item.unitPrice.toString() }
+                                  }));
+                                }
+                              }}
                               aria-label="Unit price"
                             />
                           </div>

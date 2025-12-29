@@ -31,6 +31,9 @@ export default function InsightsPage() {
   const monthStart = startOfMonth(selectedDate);
   const monthEnd = endOfMonth(selectedDate);
 
+  // Toggle state for showing price vs percentage in categories tab
+  const [showPercentage, setShowPercentage] = useState(false);
+
   // Filter receipts for selected month
   const monthReceipts = useMemo(() => {
     return receipts.filter((r) => {
@@ -79,6 +82,11 @@ export default function InsightsPage() {
   const isCurrentMonth =
     selectedDate.getMonth() === new Date().getMonth() &&
     selectedDate.getFullYear() === new Date().getFullYear();
+
+  const toggleDisplay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowPercentage(!showPercentage);
+  };
 
   return (
     <AppLayout>
@@ -235,9 +243,21 @@ export default function InsightsPage() {
                               <span className="font-semibold">{category.name}</span>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold">€{spending.total.toFixed(2)}</p>
+                              <button
+                                onClick={toggleDisplay}
+                                className="font-bold hover:text-primary transition-colors"
+                                title="Click to toggle between price and percentage"
+                              >
+                                {showPercentage 
+                                  ? `${percentage.toFixed(1)}%`
+                                  : `€${spending.total.toFixed(2)}`
+                                }
+                              </button>
                               <p className="text-xs text-muted-foreground">
-                                {percentage.toFixed(1)}%
+                                {showPercentage 
+                                  ? `€${spending.total.toFixed(2)}`
+                                  : `${percentage.toFixed(1)}%`
+                                }
                               </p>
                             </div>
                           </div>
@@ -261,12 +281,21 @@ export default function InsightsPage() {
                                 .slice(0, 3)
                                 .map(([subcatId, amount]) => {
                                   const subcat = subcats.find((s) => s.id === subcatId);
+                                  const subcatPercentage = spending.total > 0 ? (amount / spending.total) * 100 : 0;
                                   return (
                                     <div key={subcatId} className="flex justify-between text-sm">
                                       <span className="text-muted-foreground">
                                         {subcat?.name || "Other"}
                                       </span>
-                                      <span>€{amount.toFixed(2)}</span>
+                                      <button
+                                        onClick={toggleDisplay}
+                                        className="hover:text-primary transition-colors"
+                                      >
+                                        {showPercentage 
+                                          ? `${subcatPercentage.toFixed(1)}%`
+                                          : `€${amount.toFixed(2)}`
+                                        }
+                                      </button>
                                     </div>
                                   );
                                 })}
@@ -287,9 +316,15 @@ export default function InsightsPage() {
                           <span className="text-lg">📦</span>
                           <span className="font-semibold">Uncategorized</span>
                         </div>
-                        <p className="font-bold">
-                          €{categorySpending["uncategorized"].total.toFixed(2)}
-                        </p>
+                        <button
+                          onClick={toggleDisplay}
+                          className="font-bold hover:text-primary transition-colors"
+                        >
+                          {showPercentage 
+                            ? `${((categorySpending["uncategorized"].total / monthTotal) * 100).toFixed(1)}%`
+                            : `€${categorySpending["uncategorized"].total.toFixed(2)}`
+                          }
+                        </button>
                       </div>
                     </CardContent>
                   </Card>
